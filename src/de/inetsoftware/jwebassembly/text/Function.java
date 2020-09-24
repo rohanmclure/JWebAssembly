@@ -20,7 +20,7 @@ package de.inetsoftware.jwebassembly.text;
  * 
  * @author Volker Berlin
  */
-class Function {
+class Function implements de.inetsoftware.jwebassembly.module.Function {
 
     int                 id;
 

@@ -15,28 +15,31 @@
  */
 package de.inetsoftware.jwebassembly.binary;
 
+import de.inetsoftware.jwebassembly.jawa.JawaOpcodes;
 import de.inetsoftware.jwebassembly.wasm.AnyType;
+import de.inetsoftware.jwebassembly.wasm.ValueType;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.util.List;
 
 /**
  * An entry in the import section of the WebAssembly.
  * 
  * @author Volker Berlin
  */
-class ImportFunction extends Function {
+class ImportCommand extends Function {
 
     final String module;
 
     final String name;
 
-    final AnyType arg;
+    final List<ImportArguments> args;
 
-    ImportFunction( String module, String name, AnyType arg ) {
+    ImportCommand(String module, String name, List<ImportArguments> args) {
         this.module = module;
         this.name = name;
-        this.arg = arg;
+        this.args = args;
     }
 
     /**
@@ -50,13 +53,13 @@ class ImportFunction extends Function {
         bytes = this.name.getBytes( StandardCharsets.UTF_8 );
         stream.writeVaruint32( bytes.length );
         stream.write( bytes );
-        if (arg != null) {
+        if (args.size() > 0) {
             stream.writeVaruint32( ExternalKind.Args.ordinal() );
-            stream.writeVaruint32( 1 ); // args count
-            stream.writeVaruint32(ExternalKind.TypeImport.ordinal());
-            stream.writeVaruint32(arg.getJawaCode());
+            stream.writeVaruint32( args.size() ); // args count
+            for (ImportArguments arg : args) {
+                arg.writeTo(stream);
+            }
         }
-        stream.writeVaruint32( ExternalKind.Function.ordinal() );
-        stream.writeVaruint32( this.typeId );
+        stream.writeVaruint32( ExternalKind.Command.ordinal() );
     }
 }

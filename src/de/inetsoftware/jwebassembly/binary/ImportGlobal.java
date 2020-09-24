@@ -15,7 +15,9 @@
  */
 package de.inetsoftware.jwebassembly.binary;
 
+import de.inetsoftware.jwebassembly.jawa.JawaOpcodes;
 import de.inetsoftware.jwebassembly.wasm.AnyType;
+import de.inetsoftware.jwebassembly.wasm.ValueType;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -25,18 +27,21 @@ import java.nio.charset.StandardCharsets;
  * 
  * @author Volker Berlin
  */
-class ImportFunction extends Function {
+class ImportGlobal extends Function {
 
     final String module;
 
     final String name;
 
-    final AnyType arg;
+    final AnyType type;
 
-    ImportFunction( String module, String name, AnyType arg ) {
+    final AnyType args;
+
+    ImportGlobal(String module, String name, AnyType type, AnyType arg) {
         this.module = module;
         this.name = name;
-        this.arg = arg;
+        this.type = type;
+        this.args = arg;
     }
 
     /**
@@ -50,13 +55,42 @@ class ImportFunction extends Function {
         bytes = this.name.getBytes( StandardCharsets.UTF_8 );
         stream.writeVaruint32( bytes.length );
         stream.write( bytes );
-        if (arg != null) {
-            stream.writeVaruint32( ExternalKind.Args.ordinal() );
-            stream.writeVaruint32( 1 ); // args count
-            stream.writeVaruint32(ExternalKind.TypeImport.ordinal());
-            stream.writeVaruint32(arg.getJawaCode());
-        }
-        stream.writeVaruint32( ExternalKind.Function.ordinal() );
-        stream.writeVaruint32( this.typeId );
+        stream.writeVaruint32( ExternalKind.Global.ordinal() );
+
+        stream.writeValueType(ValueType.abstractref); // value type is abstract
+        stream.writeValueType(new AnyType() {
+            @Override
+            public int getCode() {
+                return type.getJawaCode();
+            }
+
+            @Override
+            public JawaOpcodes.JawaTypeOpcode getTypeOpcode() {
+                return null;
+            }
+
+            @Override
+            public int getJawaCode() {
+                return 0;
+            }
+
+            @Override
+            public boolean isRefType() {
+                return false;
+            }
+
+            @Override
+            public boolean isSubTypeOf(AnyType type) {
+                return false;
+            }
+
+            @Override
+            public boolean useRefType() {
+                return false;
+            }
+        }); // index
+        stream.write(new byte[]{(byte) 0}); // const mutability
+
     }
+
 }

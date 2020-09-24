@@ -15,8 +15,19 @@
  */
 package de.inetsoftware.jwebassembly.wasm;
 
+import de.inetsoftware.jwebassembly.JWebAssembly;
 import de.inetsoftware.jwebassembly.WasmException;
+import de.inetsoftware.jwebassembly.jawa.JawaOpcodes;
+import de.inetsoftware.jwebassembly.jawa.StringWriter;
+import de.inetsoftware.jwebassembly.module.ClassFileLoader;
+import de.inetsoftware.jwebassembly.module.FunctionManager;
+import de.inetsoftware.jwebassembly.module.ModuleWriter;
+import de.inetsoftware.jwebassembly.module.TypeManager;
 import de.inetsoftware.jwebassembly.module.TypeManager.StructType;
+
+import java.io.IOException;
+
+import static de.inetsoftware.jwebassembly.jawa.JawaOpcodes.JawaTypeOpcode.*;
 
 /**
  * A reference to an array type
@@ -40,8 +51,8 @@ public class ArrayType extends StructType {
      * @param componentClassIndex
      *            the running index of the component/array class/type
      */
-    public ArrayType( AnyType arrayType, int classIndex, int componentClassIndex ) {
-        super( getJavaClassName( arrayType ), classIndex );
+    public ArrayType(TypeManager typeManager, AnyType arrayType, int classIndex, int componentClassIndex ) {
+        super(typeManager, getJavaClassName( arrayType ), classIndex );
         this.arrayType = arrayType;
         this.componentClassIndex = componentClassIndex;
     }
@@ -100,13 +111,52 @@ public class ArrayType extends StructType {
         return componentClassIndex;
     }
 
+    public JawaOpcodes.JawaTypeOpcode getTypeOpcode() {
+        if (arrayType.getTypeOpcode() != null) return REF_ARRAY;
+        switch ((ValueType) arrayType) {
+            case i32:
+                return INT_ARRAY;
+            case i64:
+                return LONG_ARRAY;
+            case f32:
+                return FLOAT_ARRAY;
+            case f64:
+                return DOUBLE_ARRAY;
+            case v128:
+                throw new WasmException("Cannot deal with v128 arrays", -1);
+            case bool:
+                return BOOL_ARRAY;
+            case i8:
+                return BYTE_ARRAY;
+            case i16:
+            case u16:
+                return SHORT_ARRAY;
+        }
+        return null;
+    }
+
+    @Override
+    protected void writeStructImportType(ModuleWriter writer, FunctionManager functions, TypeManager types, ClassFileLoader classFileLoader) throws IOException {
+        JWebAssembly.LOGGER.fine( "import write type: " + name );
+        if (arrayType.getTypeOpcode() != null) {
+            StringWriter importName = new StringWriter();
+            importName.write(getTypeOpcode().opcode);
+            writer.importType("jawa", importName.toString(), this, (StructType) this.arrayType, this.arrayType);
+        } else {
+            StringWriter importName = new StringWriter();
+            importName.write(getTypeOpcode().opcode);
+            writer.importType("jawa", importName.toString(), this, null); //todo maybe parent is ??
+        }
+    }
+
+
     /**
      * {@inheritDoc}
      */
     @Override
     public int getCode() {
         // until there is a real type definition we will define write it as externref
-        return ValueType.externref.getCode();
+        return ValueType.abstractref.getCode();
     }
 
     /**

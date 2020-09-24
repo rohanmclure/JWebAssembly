@@ -18,11 +18,13 @@ package de.inetsoftware.jwebassembly.module;
 import java.io.ByteArrayOutputStream;
 import java.io.Closeable;
 import java.io.IOException;
+import java.util.List;
 
 import javax.annotation.Nonnegative;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
+import de.inetsoftware.jwebassembly.binary.ImportArguments;
 import de.inetsoftware.jwebassembly.module.TypeManager.StructType;
 import de.inetsoftware.jwebassembly.wasm.AnyType;
 import de.inetsoftware.jwebassembly.wasm.ArrayOperator;
@@ -64,9 +66,14 @@ public abstract class ModuleWriter implements Closeable {
     }
 
     /**
-     * Finish the prepare after all classes/methods are prepare. This must be call before we can start with write the
-     * first method.
+     *
      */
+    protected abstract Function getFunction(FunctionName name );
+
+        /**
+         * Finish the prepare after all classes/methods are prepare. This must be call before we can start with write the
+         * first method.
+         */
     protected abstract void prepareFinish();
 
     /**
@@ -100,18 +107,22 @@ public abstract class ModuleWriter implements Closeable {
      * @throws IOException
      *             if any I/O error occur
      */
-    protected abstract void prepareImport( FunctionName name, String importModule, String importName ) throws IOException;
+    protected abstract void prepareImport( FunctionName name, String importModule, String importName, AnyType arg ) throws IOException;
 
-    /**
-     * Write an export directive
-     * @param name
-     *            the function name
-     * @param exportName
-     *            the export name, if null then the same like the method name
-     * 
-     * @throws IOException
-     *             if any I/O error occur
-     */
+    public abstract void importType(String importModule, String importName, StructType type, StructType parent, AnyType... args) throws IOException;
+
+    public abstract void importCommand(String importModule, String importName, List<ImportArguments> args) throws IOException;
+
+        /**
+         * Write an export directive
+         * @param name
+         *            the function name
+         * @param exportName
+         *            the export name, if null then the same like the method name
+         *
+         * @throws IOException
+         *             if any I/O error occur
+         */
     protected abstract void writeExport( FunctionName name, String exportName ) throws IOException;
 
     /**

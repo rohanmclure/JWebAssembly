@@ -17,6 +17,7 @@ package de.inetsoftware.jwebassembly.binary;
 
 import java.io.IOException;
 
+import de.inetsoftware.jwebassembly.wasm.AnyType;
 import de.inetsoftware.jwebassembly.wasm.ValueType;
 
 /**
@@ -39,7 +40,7 @@ abstract class TypeEntry extends SectionEntry {
      * Get the form of the type.
      * @return the form
      */
-    abstract ValueType getTypeForm();
+    abstract AnyType getTypeForm();
 
     /**
      * Write this single entry to a section

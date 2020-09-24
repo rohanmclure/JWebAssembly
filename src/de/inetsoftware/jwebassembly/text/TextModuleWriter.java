@@ -16,19 +16,15 @@
 package de.inetsoftware.jwebassembly.text;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedHashMap;
-import java.util.Map;
+import java.util.*;
 import java.util.Map.Entry;
-import java.util.Set;
 
 import javax.annotation.Nonnegative;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
 import de.inetsoftware.jwebassembly.WasmException;
+import de.inetsoftware.jwebassembly.binary.ImportArguments;
 import de.inetsoftware.jwebassembly.module.FunctionName;
 import de.inetsoftware.jwebassembly.module.ModuleWriter;
 import de.inetsoftware.jwebassembly.module.TypeManager.StructType;
@@ -68,6 +64,10 @@ public class TextModuleWriter extends ModuleWriter {
     private StringBuilder                  methodOutput;
 
     private final StringBuilder            imports          = new StringBuilder();
+
+    private final StringBuilder            typeImports      = new StringBuilder();
+
+    private final StringBuilder            commandImports      = new StringBuilder();
 
     private final Map<String, Function>    functions        = new LinkedHashMap<>();
 
@@ -114,6 +114,7 @@ public class TextModuleWriter extends ModuleWriter {
             textOutput.append( "(type $t" ).append( Integer.toString( i ) ).append( " (func" ).append( types.get( i ) ).append( "))" );
         }
 
+        textOutput.append(typeImports);
         textOutput.append( imports );
 
         for( Entry<String, AnyType> entry : globals.entrySet() ) {
@@ -192,7 +193,7 @@ public class TextModuleWriter extends ModuleWriter {
      */
     @Override
     protected int writeStructType( StructType type ) throws IOException {
-        type.writeToStream( dataStream, (funcName) -> getFunction( funcName ).id, options );
+        type.writeToStream( dataStream, (funcName) -> getFunc( funcName ).id, options );
 
         if( !options.useGC() ) {
             return ValueType.externref.getCode();
@@ -251,7 +252,7 @@ public class TextModuleWriter extends ModuleWriter {
      * {@inheritDoc}
      */
     @Override
-    protected void prepareImport( FunctionName name, String importModule, String importName ) throws IOException {
+    protected void prepareImport( FunctionName name, String importModule, String importName, AnyType arg ) throws IOException {
         if( importName != null ) {
             methodOutput = imports;
             newline( methodOutput );
@@ -260,8 +261,34 @@ public class TextModuleWriter extends ModuleWriter {
         }
     }
 
+    @Override
+    public void importType(String importModule, String importName, StructType type, StructType parent, AnyType... args) throws IOException {
+        if (importName != null) {
+            newline( typeImports );
+            typeImports.append( "(import \"" ).append( importModule ).append( "\" \"" ).append( importName )
+                        .append( "\" (type " ).append( normalizeName( type.toString() ) );
+
+            if (parent == null) {
+                typeImports.append(" any))");
+            } else {
+                typeImports.append(" (sub ").append(normalizeName(parent.toString())).append("))");
+            }
+        }
+
+    }
+
+    @Override
+    public void importCommand(String importModule, String importName, List<ImportArguments> args) throws IOException {
+        if (importName != null) {
+            newline(commandImports);
+            typeImports.append( "(import \"" ).append( importModule ).append( "\" \"" ).append( importName )
+                    .append( "\" (command))");
+        }
+    }
+
     /**
-     * Normalize the function name for the text format
+     * Normalize the function name for the text format of IDs.
+     * https://webassembly.github.io/spec/core/text/values.html#text-id
      * 
      * @param name
      *            the name
@@ -269,7 +296,7 @@ public class TextModuleWriter extends ModuleWriter {
      */
     @Nonnull
     private String normalizeName( FunctionName name ) {
-        Function function = getFunction( name );
+        Function function = getFunc( name );
         if( function.name == null ) {
             String base;
             String str = base = normalizeName( name.fullName );
@@ -321,7 +348,11 @@ public class TextModuleWriter extends ModuleWriter {
             //output.append( ValueType.eqref.toString() );
             output.append( "(ref null " ).append( normalizeName( type.toString() ) ).append( ')' );
         } else {
-            output.append( ValueType.externref.toString() );
+            if (type.useRefType()) {
+                output.append("(ref " + type.toString() + ")");
+            } else {
+                output.append( ValueType.externref.toString() );
+            }
         }
     }
 
@@ -381,7 +412,7 @@ public class TextModuleWriter extends ModuleWriter {
             idx = types.size();
             types.add( typeStr );
         }
-        getFunction( name ).typeId = idx;
+        getFunc( name ).typeId = idx;
 
         if( isImport ) {
             isImport = false;
@@ -390,7 +421,12 @@ public class TextModuleWriter extends ModuleWriter {
         }
     }
 
-    private Function getFunction( FunctionName name ) {
+    private Function getFunc(FunctionName n) {
+        return (Function) getFunction(n);
+    }
+
+    @Override
+    protected de.inetsoftware.jwebassembly.module.Function getFunction(FunctionName name) {
         String signatureName = name.signatureName;
         Function func = functions.get( signatureName );
         if( func == null ) {
@@ -409,7 +445,7 @@ public class TextModuleWriter extends ModuleWriter {
      */
     @Override
     protected void writeMethodStart( FunctionName name, String sourceFile ) throws IOException {
-        methodOutput = getFunction( name ).output;
+        methodOutput = getFunc( name ).output;
 
         newline( methodOutput );
         methodOutput.append( "(func $" );
@@ -705,7 +741,7 @@ public class TextModuleWriter extends ModuleWriter {
         callIndirect = true;
 
         newline( methodOutput );
-        methodOutput.append( "call_indirect (type $t" ).append( getFunction( name ).typeId ).append( ")  ;; " ).append( name.signatureName );
+        methodOutput.append( "call_indirect (type $t" ).append( getFunc( name ).typeId ).append( ")  ;; " ).append( name.signatureName );
     }
 
     /**

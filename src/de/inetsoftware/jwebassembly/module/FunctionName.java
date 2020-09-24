@@ -49,7 +49,7 @@ public class FunctionName {
      * The name in the WebAssembly. For example: "java/lang/String.hashCode"
      */
     @Nonnull
-    public final String fullName;
+    public String fullName;
 
     /**
      * The Java signature which is used in Java byte code to reference the method call. For example: "java/lang/String.hashCode()I"

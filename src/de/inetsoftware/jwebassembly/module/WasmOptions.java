@@ -21,6 +21,7 @@ import javax.annotation.Nonnull;
 
 import de.inetsoftware.jwebassembly.JWebAssembly;
 import de.inetsoftware.jwebassembly.javascript.JavaScriptSyntheticFunctionName;
+import de.inetsoftware.jwebassembly.jawa.JawaOpcodes;
 import de.inetsoftware.jwebassembly.wasm.AnyType;
 import de.inetsoftware.jwebassembly.wasm.ValueType;
 
@@ -72,6 +73,16 @@ public class WasmOptions {
         }
 
         @Override
+        public JawaOpcodes.JawaTypeOpcode getTypeOpcode() {
+            return null;
+        }
+
+        @Override
+        public int getJawaCode() {
+            return -1;
+        }
+
+        @Override
         public boolean isRefType() {
             return false;
         }
@@ -79,6 +90,11 @@ public class WasmOptions {
         @Override
         public boolean isSubTypeOf( AnyType type ) {
             return type == this;
+        }
+
+        @Override
+        public boolean useRefType() {
+            return false;
         }
 
         @Override

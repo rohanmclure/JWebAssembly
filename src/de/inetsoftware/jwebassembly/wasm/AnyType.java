@@ -15,6 +15,8 @@
  */
 package de.inetsoftware.jwebassembly.wasm;
 
+import de.inetsoftware.jwebassembly.jawa.JawaOpcodes;
+
 import javax.annotation.Nonnull;
 
 /**
@@ -39,6 +41,10 @@ public interface AnyType {
      */
     public int getCode();
 
+    public JawaOpcodes.JawaTypeOpcode getTypeOpcode();
+
+    public int getJawaCode();
+
     /**
      * If the type is a reference type. A GC reference to the heap.
      * 
@@ -54,4 +60,7 @@ public interface AnyType {
      * @return true, if both are identical or the type is a sub type
      */
     public boolean isSubTypeOf( @Nonnull AnyType type );
+
+    public boolean useRefType();
+
 }

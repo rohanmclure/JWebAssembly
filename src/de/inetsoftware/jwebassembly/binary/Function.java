@@ -26,7 +26,7 @@ import de.inetsoftware.jwebassembly.sourcemap.SourceMapping;
  * 
  * @author Volker Berlin
  */
-class Function extends SectionEntry {
+class Function extends SectionEntry implements de.inetsoftware.jwebassembly.module.Function {
 
     int                      id;
 

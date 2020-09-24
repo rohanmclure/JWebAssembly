@@ -16,14 +16,8 @@
 package de.inetsoftware.jwebassembly.binary;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.Map.Entry;
-import java.util.Set;
 
 import javax.annotation.Nonnegative;
 import javax.annotation.Nonnull;
@@ -79,7 +73,13 @@ public class BinaryModuleWriter extends ModuleWriter implements InstructionOpcod
 
     private List<ExportEntry>           exports             = new ArrayList<>();
 
-    private Map<String, ImportFunction> imports             = new LinkedHashMap<>();
+    private Map<String, ImportFunction> functionImports     = new LinkedHashMap<>();
+
+    private Map<String, ImportType>     typeImports         = new LinkedHashMap<>();
+
+    private Map<String, ImportCommand>  commandImports      = new LinkedHashMap<>();
+
+    private Map<String, ImportGlobal>   globalImports       = new LinkedHashMap<>();
 
     private Map<String, Function>       abstracts           = new HashMap<>();
 
@@ -121,9 +121,12 @@ public class BinaryModuleWriter extends ModuleWriter implements InstructionOpcod
         wasm.write( WASM_BINARY_MAGIC );
         wasm.writeInt32( WASM_BINARY_VERSION );
 
-        writeSection( SectionType.Type, functionTypes );
-        writeSection( SectionType.Import, imports.values() );
-        writeSection( SectionType.Function, functions.values() );
+        writeSection( SectionType.Import, typeImports.values());        // Import the JAWA types
+        writeSection( SectionType.Type, functionTypes );                // Import the function types
+        writeSection( SectionType.Function, functions.values() );       // Function Index -> Signature
+        writeSection( SectionType.Import, commandImports.values());     // Define JAWA commands
+        writeSection( SectionType.Import, functionImports.values() );   // Import the JAWA functions
+        writeSection( SectionType.Import, globalImports.values());      // Import global jawa consts
         writeTableSection();
         writeMemorySection();
         writeEventSection();
@@ -186,7 +189,7 @@ public class BinaryModuleWriter extends ModuleWriter implements InstructionOpcod
         stream.writeVaruint32( count ); // count of tables
 
         // indirect function table 
-        int elemCount = callIndirect ? imports.size() + functions.size() : 0;
+        int elemCount = callIndirect ? functionImports.size() + functions.size() : 0;
         stream.writeValueType( ValueType.funcref ); // the type of elements
         stream.writeVaruint32( 0 ); // flags; 1-maximum is available, 0-no maximum value available
         stream.writeVaruint32( elemCount ); // initial length
@@ -207,6 +210,15 @@ public class BinaryModuleWriter extends ModuleWriter implements InstructionOpcod
         }
 
         wasm.writeSection( SectionType.Table, stream );
+    }
+
+    /**
+     * Write the type import section.
+     *
+     * @throws IOException
+     *             if any I/O error occur
+     */
+    private void writeTypeImportSection() throws IOException {
     }
 
     /**
@@ -260,7 +272,7 @@ public class BinaryModuleWriter extends ModuleWriter implements InstructionOpcod
         if( startFunction == null ) {
             return;
         }
-        int id = getFunction( startFunction ).id;
+        int id = getFunc( startFunction ).id;
         WasmOutputStream stream = new WasmOutputStream( options );
         stream.writeVaruint32( id );
         wasm.writeSection( SectionType.Start, stream );
@@ -277,7 +289,7 @@ public class BinaryModuleWriter extends ModuleWriter implements InstructionOpcod
             return;
         }
 
-        int elemCount = imports.size() + functions.size();
+        int elemCount = functionImports.size() + functions.size();
         WasmOutputStream stream = new WasmOutputStream( options );
         stream.writeVaruint32( 1 ); // count of element segments to follow
 
@@ -375,8 +387,8 @@ public class BinaryModuleWriter extends ModuleWriter implements InstructionOpcod
         // write function names
         stream.write( 1 ); // 1 - Function name
         WasmOutputStream section = new WasmOutputStream( options );
-        section.writeVaruint32( imports.size() + functions.size() );
-        writeDebugFunctionNames( imports.entrySet(), section );
+        section.writeVaruint32( functionImports.size() + functions.size() );
+        writeDebugFunctionNames( functionImports.entrySet(), section );
         writeDebugFunctionNames( functions.entrySet(), section );
         stream.writeVaruint32( section.size() );
         section.writeTo( stream );
@@ -384,8 +396,8 @@ public class BinaryModuleWriter extends ModuleWriter implements InstructionOpcod
         // write function parameter names
         stream.write( 2 ); // 2 - Local names
         section.reset();
-        section.writeVaruint32( imports.size() + functions.size() );
-        writeDebugParameternNames( imports.entrySet(), section );
+        section.writeVaruint32( functionImports.size() + functions.size() );
+        writeDebugParameternNames( functionImports.entrySet(), section );
         writeDebugParameternNames( functions.entrySet(), section );
         stream.writeVaruint32( section.size() );
         section.writeTo( stream );
@@ -495,14 +507,13 @@ public class BinaryModuleWriter extends ModuleWriter implements InstructionOpcod
      */
     @Override
     protected int writeStructType( StructType type ) throws IOException {
-        type.writeToStream( dataStream, (funcName) -> getFunction( funcName ).id, options );
+        type.writeToStream( dataStream, (funcName) -> getFunc( funcName ).id, options );
 
         if( !options.useGC() ) {
-            return ValueType.externref.getCode();
+           return ValueType.externref.getCode();
         }
 
         int typeId = functionTypes.size();
-        functionTypes.add( new StructTypeEntry( type.getFields() ) );
         return typeId;
     }
 
@@ -525,19 +536,35 @@ public class BinaryModuleWriter extends ModuleWriter implements InstructionOpcod
             type.params.add( ValueType.exnref );
             type.results.add( ValueType.externref );
             options.setCatchType( functionTypes.size() );
-            functionTypes.add( type );
+//            functionTypes.add( type );
         }
+        throw new WasmException("Cannot handle exceptions at this stage" , -1);
     }
 
     /**
      * {@inheritDoc}
      */
     @Override
-    protected void prepareImport( FunctionName name, String importModule, String importName ) {
+    protected void prepareImport( FunctionName name, String importModule, String importName, AnyType arg ) {
         ImportFunction importFunction;
-        function = importFunction = new ImportFunction(importModule, importName);
-        imports.put( name.signatureName, importFunction );
+        function = importFunction = new ImportFunction(importModule, importName, arg);
+        functionImports.put( name.signatureName, importFunction );
     }
+
+    @Override
+    public void importType(String importModule, String importName, StructType type, StructType parent, AnyType... args) throws IOException {
+        ImportType importType;
+        importType = new ImportType(importModule, importName, type, parent, args);
+        typeImports.put( type.getName(), importType );
+    }
+
+    @Override
+    public void importCommand(String importModule, String importName, List<ImportArguments> args) throws IOException {
+        ImportCommand importCommand;
+        importCommand = new ImportCommand(importModule, importName, args);
+        commandImports.put( args.get(0).toString(), importCommand );
+    }
+
 
     /**
      * {@inheritDoc}
@@ -547,11 +574,11 @@ public class BinaryModuleWriter extends ModuleWriter implements InstructionOpcod
         // initialize the function index IDs
         // https://github.com/WebAssembly/design/blob/master/Modules.md#function-index-space
         int id = 0;
-        for( ImportFunction entry : imports.values() ) {
-            entry.id = id++;
-        }
         for( Function function : functions.values() ) {
             function.id = id++;
+        }
+        for( ImportFunction entry : functionImports.values() ) {
+            entry.id = id++;
         }
     }
 
@@ -560,7 +587,7 @@ public class BinaryModuleWriter extends ModuleWriter implements InstructionOpcod
      */
     @Override
     protected void writeExport( FunctionName name, String exportName ) throws IOException {
-        exports.add( new ExportEntry( exportName, ExternalKind.Function, getFunction( name ).id ) );
+        exports.add( new ExportEntry( exportName, ExternalKind.Function, getFunc( name ).id ) );
     }
 
     /**
@@ -576,7 +603,7 @@ public class BinaryModuleWriter extends ModuleWriter implements InstructionOpcod
                 startFunction = name;
                 //$FALL-THROUGH$
             default:
-                function = getFunction( name );
+                function = getFunc( name );
         }
         functionType = new FunctionTypeEntry();
         locals.clear();
@@ -709,7 +736,11 @@ public class BinaryModuleWriter extends ModuleWriter implements InstructionOpcod
     @Override
     protected void writeGlobalAccess( boolean load, FunctionName name, AnyType type ) throws IOException {
         Global var = globals.get( name.fullName );
-        if( var == null ) { // if not declared then create a definition in the global section
+        if (name.className == "jawa") {
+            var = new Global();
+            var.id = globalImports.size();
+            globalImports.put(name.fullName, new ImportGlobal(name.className, name.methodName, type, null));
+        } else if ( var == null ) { // if not declared then create a definition in the global section
             var = new Global();
             var.id = globals.size();
             var.type = type;
@@ -1217,7 +1248,7 @@ public class BinaryModuleWriter extends ModuleWriter implements InstructionOpcod
      */
     @Override
     protected void writeFunctionCall( FunctionName name, String comments ) throws IOException {
-        Function func = getFunction( name );
+        Function func = getFunc( name );
         codeStream.writeOpCode( CALL );
         codeStream.writeVaruint32( func.id );
     }
@@ -1228,8 +1259,7 @@ public class BinaryModuleWriter extends ModuleWriter implements InstructionOpcod
     @Override
     protected void writeVirtualFunctionCall( FunctionName name, AnyType type ) throws IOException {
         callIndirect = true;
-
-        Function func = getFunction( name );
+        Function func = getFunc( name );
         codeStream.writeOpCode( CALL_INDIRECT );
         codeStream.writeVaruint32( func.typeId );
         codeStream.writeVaruint32( 0 ); // table 0
@@ -1242,22 +1272,26 @@ public class BinaryModuleWriter extends ModuleWriter implements InstructionOpcod
      *            the function name
      * @return the function object
      */
-    @Nonnull
-    private Function getFunction( FunctionName name ) {
+    @Override
+    protected de.inetsoftware.jwebassembly.module.Function getFunction(FunctionName name) {
         String signatureName = name.signatureName;
         Function func = functions.get( signatureName );
         if( func == null ) {
-            func = imports.get( signatureName );
+            func = functionImports.get( signatureName );
             if( func == null ) {
                 func = abstracts.get( signatureName );
                 if( func == null ) {
                     func = new Function();
-                    func.id = functions.size() + imports.size();
+                    func.id = functions.size() + functionImports.size();
                     functions.put( signatureName, func );
                 }
             }
         }
         return func;
+    }
+
+    protected Function getFunc(FunctionName name) {
+        return (Function) getFunction(name);
     }
 
     /**

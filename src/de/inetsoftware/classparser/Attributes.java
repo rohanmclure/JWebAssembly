@@ -28,7 +28,7 @@ import javax.annotation.Nullable;
  */
 public class Attributes {
 
-    private final AttributeInfo[] attributes;
+    public final AttributeInfo[] attributes;
 
     private final ConstantPool    constantPool;
 
@@ -55,7 +55,7 @@ public class Attributes {
         return null;
     }
 
-    static class AttributeInfo {
+    public static class AttributeInfo {
 
         private final String name;
 
@@ -67,7 +67,7 @@ public class Attributes {
             input.readFully( this.info );
         }
 
-        String getName() {
+        public String getName() {
             return name;
         }
 

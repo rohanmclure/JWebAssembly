@@ -18,31 +18,26 @@ package de.inetsoftware.jwebassembly.module;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.Map.Entry;
-import java.util.Set;
 import java.util.function.ToIntFunction;
 
 import javax.annotation.Nonnull;
 
-import de.inetsoftware.classparser.ClassFile;
+import de.inetsoftware.classparser.*;
 import de.inetsoftware.classparser.ClassFile.Type;
-import de.inetsoftware.classparser.ConstantClass;
-import de.inetsoftware.classparser.FieldInfo;
-import de.inetsoftware.classparser.MethodInfo;
 import de.inetsoftware.jwebassembly.JWebAssembly;
 import de.inetsoftware.jwebassembly.WasmException;
+import de.inetsoftware.jwebassembly.binary.ImportArguments;
+import de.inetsoftware.jwebassembly.jawa.JawaAttributes;
+import de.inetsoftware.jwebassembly.jawa.JawaOpcodes;
+import de.inetsoftware.jwebassembly.jawa.JawaSignature;
+import de.inetsoftware.jwebassembly.jawa.StringWriter;
 import de.inetsoftware.jwebassembly.wasm.AnyType;
 import de.inetsoftware.jwebassembly.wasm.ArrayType;
 import de.inetsoftware.jwebassembly.wasm.LittleEndianOutputStream;
 import de.inetsoftware.jwebassembly.wasm.NamedStorageType;
 import de.inetsoftware.jwebassembly.wasm.ValueType;
-import de.inetsoftware.jwebassembly.wasm.ValueTypeParser;
 
 /**
  * Manage the written and to write types (classes)
@@ -58,11 +53,6 @@ public class TypeManager {
      * Name of field with system hash code, start with a point for an invalid Java identifier.
      */
     static final String             FIELD_HASHCODE = ".hashcode";
-
-    /**
-     * Name of field with array value.
-     */
-    static final String             FIELD_VALUE = ".val";
 
     /**
      * Byte position in the type description that contains the offset to the interfaces. Length 4 bytes.
@@ -146,7 +136,13 @@ public class TypeManager {
      */
     private static final String[]     PRIMITIVE_CLASSES                  = { "boolean", "byte", "char", "double", "float", "int", "long", "short", "void" };
 
+    private static final String[]     EXT_CLASSES = { "java/lang/Object", "java/lang/String"};
+
     private Map<Object, StructType> structTypes = new LinkedHashMap<>();
+
+    private int jawaTypes = 0;
+
+    private final LinkedHashSet<StructType> orderedStructTypes = new LinkedHashSet<>();
 
     private boolean                 isFinish;
 
@@ -194,11 +190,39 @@ public class TypeManager {
         for( StructType type : structTypes.values() ) {
             type.scanTypeHierarchy( options.functions, this, classFileLoader );
         }
+
+        // Slow...
+        while (orderedStructTypes.size() != structTypes.size()) {
+            for (StructType type : structTypes.values()) {
+                orderedStructTypes.add(type);
+                if (!orderedStructTypes.containsAll(type.instanceOFs)) {
+                    orderedStructTypes.remove(type);
+                }
+            }
+        }
+
+        for (StructType type : orderedStructTypes) {
+            if (type.getClassIndex() < PRIMITIVE_CLASSES.length) continue;
+            if (type instanceof ArrayType) continue;
+            type.jawaAccessFlags = JawaAttributes.JawaClassAttr.convertToJawa(classFileLoader.get(type.name).getAccessFlags());
+        }
+
+    }
+
+    void setTypeIndex() {
+        int count = 0;
+        for ( Iterator<StructType> iter = orderedStructTypes.iterator(); iter.hasNext(); )
+        {
+            StructType type = iter.next();
+            if (type.getClassIndex() < PRIMITIVE_CLASSES.length) continue;
+            type.typeIndex = count;
+            count++;
+        }
     }
 
     /**
      * Finish the prepare and write the types. Now no new types and functions should be added.
-     * 
+     *
      * @param writer
      *            the targets for the types
      * @param classFileLoader
@@ -208,8 +232,10 @@ public class TypeManager {
      */
     void prepareFinish( ModuleWriter writer, ClassFileLoader classFileLoader ) throws IOException {
         isFinish = true;
-        for( StructType type : structTypes.values() ) {
-            type.writeStructType( writer, options.functions, this, classFileLoader );
+
+        for ( StructType type : orderedStructTypes ) {
+            if (type.getClassIndex() < PRIMITIVE_CLASSES.length) continue;
+            type.writeStructImportType( writer, options.functions, this, classFileLoader );
         }
 
         // write type table
@@ -223,7 +249,7 @@ public class TypeManager {
 
     /**
      * Create an accessor for typeTableOffset and mark it.
-     * 
+     *
      * @return the function name
      */
     WatCodeSyntheticFunctionName getTypeTableMemoryOffsetFunctionName() {
@@ -260,8 +286,9 @@ public class TypeManager {
 
         if( structTypes.size() == 0 ) {
             for( String primitiveTypeName : PRIMITIVE_CLASSES ) {
-                structTypes.put( primitiveTypeName, new StructType( primitiveTypeName, structTypes.size() ) );
+                structTypes.put( primitiveTypeName, new StructType(this, primitiveTypeName, structTypes.size() ) );
             }
+            structTypes.put("java/lang/Object", this.valueOf("java/lang/Object"));
         }
     }
 
@@ -275,13 +302,8 @@ public class TypeManager {
     public StructType valueOf( String name ) {
         StructType type = structTypes.get( name );
         if( type == null ) {
-            if( name.startsWith( "[" ) ) {
-                return (StructType)new ValueTypeParser( name, options.types ).next();
-            } else {
-                checkStructTypesState( name );
-                type = new StructType( name, structTypes.size() );
-            }
-
+            checkStructTypesState( name );
+            type = new StructType(this, name, structTypes.size(), Arrays.asList(EXT_CLASSES).contains(name) ? JawaOpcodes.JawaTypeOpcode.EXT_CLASS : JawaOpcodes.JawaTypeOpcode.DECL_CLASS);
             structTypes.put( name, type );
         }
         return type;
@@ -337,7 +359,7 @@ public class TypeManager {
                 componentClassIndex = ((StructType)arrayType).classIndex;
             }
 
-            type = new ArrayType( arrayType, structTypes.size(), componentClassIndex );
+            type = new ArrayType( this, arrayType, structTypes.size(), componentClassIndex );
             structTypes.put( arrayType, type );
         }
         return type;
@@ -493,11 +515,19 @@ public class TypeManager {
      */
     public static class StructType implements AnyType {
 
-        private final String           name;
+        private final TypeManager typeManager;
+
+        protected final String           name;
 
         private final int              classIndex;
 
+        private int                    typeIndex = -15;
+
         private int                    code = Integer.MAX_VALUE;
+
+        private JawaOpcodes.JawaTypeOpcode typeCode;
+
+        private StructType parent;
 
         private HashSet<String>        neededFields = new HashSet<>();
 
@@ -509,6 +539,8 @@ public class TypeManager {
 
         private Map<StructType,List<FunctionName>> interfaceMethods;
 
+        private int jawaAccessFlags = -1;
+
         /**
          * The offset to the vtable in the data section.
          */
@@ -516,15 +548,21 @@ public class TypeManager {
 
         /**
          * Create a reference to type
-         * 
+         *
+         * @param typeManager
          * @param name
          *            the Java class name
          * @param classIndex
-         *            the running index of the class/type
          */
-        protected StructType( String name, int classIndex ) {
+        protected StructType(TypeManager typeManager, String name, int classIndex) {
+            this.typeManager = typeManager;
             this.name = name;
             this.classIndex = classIndex;
+        }
+
+        protected StructType(TypeManager typeManager, String name, int classIndex, JawaOpcodes.JawaTypeOpcode opcode) {
+            this(typeManager, name, classIndex);
+            typeCode = opcode;
         }
 
         /**
@@ -564,7 +602,6 @@ public class TypeManager {
             } else {
                 // add all interfaces to the instanceof set
                 listInterfaces( functions, types, classFileLoader );
-
                 HashSet<String> allNeededFields = new HashSet<>();
                 listStructFields( name, functions, types, classFileLoader, allNeededFields );
             }
@@ -587,6 +624,102 @@ public class TypeManager {
         private void writeStructType( ModuleWriter writer, FunctionManager functions, TypeManager types, ClassFileLoader classFileLoader ) throws IOException {
             JWebAssembly.LOGGER.fine( "write type: " + name );
             code = writer.writeStructType( this );
+        }
+
+        protected void writeStructImportType( ModuleWriter writer, FunctionManager functions, TypeManager types, ClassFileLoader classFileLoader ) throws IOException {
+            JWebAssembly.LOGGER.fine( "import write type: " + name );
+            StringWriter importName = new StringWriter();
+            importName.write(getTypeOpcode().opcode);
+            importName.writeName(this.getName());
+            if (this.getTypeOpcode() == JawaOpcodes.JawaTypeOpcode.DECL_CLASS) {
+                importName.writeJI2(this.jawaAccessFlags);
+                importName.writeJI4(/* interface count */ 0); // todo add interfaces
+                writer.importType("jawa", importName.toString(), this, this.parent, this.parent);
+                writeStructImportCommand(writer, functions, types, classFileLoader);
+            } else {
+                writer.importType("jawa", importName.toString(), this, this.parent);
+            }
+        }
+
+        protected void writeStructImportCommand( ModuleWriter writer, FunctionManager functions, TypeManager types, ClassFileLoader classFileLoader) throws IOException {
+            JWebAssembly.LOGGER.fine( "import command type: " + name );
+            ClassFile classFile = classFileLoader.get( this.name );
+            if( classFile == null ) {
+                throw new WasmException( "Missing class: " + this.name, -1 );
+            }
+
+            ArrayList<FieldInfo> staticFields = new ArrayList<>();
+            ArrayList<FieldInfo> instanceFields = new ArrayList<>();
+            ArrayList<MethodInfo> staticMethods = new ArrayList<>();
+            ArrayList<MethodInfo> instanceMethods = new ArrayList<>();
+
+            for( FieldInfo field : classFile.getFields() ) {
+                if( field.isStatic() )
+                    staticFields.add(field);
+                else
+                    instanceFields.add(field);
+            }
+            for (MethodInfo method : classFile.getMethods()) {
+                FunctionName fname = new FunctionName(method.getClassName(), method.getName(), method.getSignature());
+                if (!functions.isUsed(fname))
+                    continue;
+                if (method.isStatic())
+                    staticMethods.add(method);
+                else
+                    instanceMethods.add(method);
+            }
+            StringWriter importName = new StringWriter();
+            importName.write(JawaOpcodes.JawaTypeOpcode.DEF_CLASS.opcode);
+            List<ImportArguments> args = new ArrayList<>();
+            args.add(new ImportArguments.AnyType(this));
+
+            importName.writeJI4(instanceFields.size());
+            for (FieldInfo field : instanceFields) {
+                importName.writeName(field.getName()); // field name
+                importName.writeJI2(JawaAttributes.JawaFieldAttr.convertTo(field.getAccessFlags())); // access flags
+                importName.writeSig(field.getType());
+            }
+            importName.writeJI4(instanceMethods.size());
+            for (MethodInfo method : instanceMethods) {
+                FunctionName fname = new FunctionName(method.getClassName(), method.getName(), method.getSignature());
+                if (functions.isUsed(fname)) {
+                    importName.writeName(method.getName());
+                    importName.writeJI2(JawaAttributes.JawaMethodAttr.convertTo(method.getAccessFlags()));
+                    JawaSignature sig = new JawaSignature(method.getSignature(), this.typeManager);
+                    String jawaSig = sig.getJawaSig();
+                    importName.writeJI2(jawaSig.length() - 1); // -1 for the return type
+                    importName.writeSig(jawaSig);
+                    for (AnyType t : sig.getJawaTypes()) {
+                        args.add(new ImportArguments.AnyType(t));
+                    }
+                    args.add(new ImportArguments.Function(writer.getFunction(fname)));
+                }
+            }
+            importName.writeJI4(staticFields.size());
+            for (FieldInfo field : staticFields) {
+                importName.writeName(field.getName()); // field name
+                importName.writeJI2(JawaAttributes.JawaFieldAttr.convertTo(field.getAccessFlags())); // access flags
+                importName.writeSig(field.getType());
+            }
+            importName.writeJI4(staticMethods.size());
+            for (MethodInfo method : staticMethods) {
+                FunctionName fname = new FunctionName(method.getClassName(), method.getName(), method.getSignature());
+                if (functions.isUsed(fname)) {
+                    importName.writeName(method.getName());
+                    importName.writeJI2(JawaAttributes.JawaMethodAttr.convertTo(method.getAccessFlags()));
+                    JawaSignature sig = new JawaSignature(method.getSignature(), this.typeManager);
+                    String jawaSig = sig.getJawaSig();
+                    importName.writeJI2(jawaSig.length() - 1); // -1 for the return type
+                    importName.writeSig(jawaSig);
+                    for (AnyType t : sig.getJawaTypes()) {
+                        args.add(new ImportArguments.AnyType(t));
+                    }
+                    args.add(new ImportArguments.Function(writer.getFunction(fname)));
+                }
+            }
+            writer.importCommand("jawa",
+                    importName.toString(),
+                    args);
         }
 
         /**
@@ -620,6 +753,8 @@ public class TypeManager {
                 // list all used fields
                 StructType type = types.structTypes.get( className );
                 if( type != null ) {
+                    if (type != this && parent == null)
+                        parent = type;
                     allNeededFields.addAll( type.neededFields );
                     instanceOFs.add( type );
                 }
@@ -633,9 +768,6 @@ public class TypeManager {
             } else {
                 fields.add( new NamedStorageType( ValueType.i32, className, FIELD_VTABLE ) );
                 fields.add( new NamedStorageType( ValueType.i32, className, FIELD_HASHCODE ) );
-                if( getComponentClassIndex() >= 0 ) {
-                    fields.add( new NamedStorageType( this, className, FIELD_VALUE ) );
-                }
             }
 
             // list all fields
@@ -833,6 +965,17 @@ public class TypeManager {
             return code;
         }
 
+        public JawaOpcodes.JawaTypeOpcode getTypeOpcode() { return typeCode; }
+
+        public boolean requireDefine() {
+            switch ( typeCode ) {
+                case DECL_CLASS:
+                case DECL_INTERFACE:
+                    return true;
+            }
+            return false;
+        }
+
         /**
          * {@inheritDoc}
          */
@@ -850,6 +993,11 @@ public class TypeManager {
             return type == this || type == ValueType.externref || type == ValueType.anyref || type == ValueType.eqref;
         }
 
+        @Override
+        public boolean useRefType() {
+            return this.parent != null || this.getName().equals("java/lang/Object");
+        }
+
         /**
          * Get the name of the Java type
          * @return the name
@@ -865,6 +1013,15 @@ public class TypeManager {
          */
         public int getClassIndex() {
             return classIndex;
+        }
+
+        /**
+         * The running index of the class/type for class meta data, instanceof and interface calls.
+         *
+         * @return the unique index
+         */
+        public int getJawaCode() {
+            return typeIndex;
         }
 
         /**

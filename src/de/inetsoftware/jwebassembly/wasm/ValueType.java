@@ -15,6 +15,8 @@
  */
 package de.inetsoftware.jwebassembly.wasm;
 
+import de.inetsoftware.jwebassembly.jawa.JawaOpcodes;
+
 /**
  * @author Volker Berlin
  */
@@ -24,10 +26,10 @@ public enum ValueType implements AnyType {
     f32(-0x03),
     f64(-0x04),
     v128(-0x05),
-    bool(-0x06),
-    i8(-0x06),
-    i16(-0x07),
-    u16(-0x07),
+    bool(-0x01),
+    i8(-0x01),
+    i16(-0x01),
+    u16(-0x01),
     funcref(-0x10),
     externref(-0x11),
     anyref(-0x12),
@@ -39,6 +41,7 @@ public enum ValueType implements AnyType {
     struct(-0x21),
     array(-0x22),
     empty(-0x40), // empty/void block_type
+    abstractref(-0x21),
     ;
 
     private final int code;
@@ -63,6 +66,16 @@ public enum ValueType implements AnyType {
         return code;
     }
 
+    @Override
+    public JawaOpcodes.JawaTypeOpcode getTypeOpcode() {
+        return null;
+    }
+
+    @Override
+    public int getJawaCode() {
+        return -1;
+    }
+
     /**
      * {@inheritDoc}
      */
@@ -77,5 +90,10 @@ public enum ValueType implements AnyType {
     @Override
     public boolean isSubTypeOf( AnyType type ) {
         return type == this;
+    }
+
+    @Override
+    public boolean useRefType() {
+        return false;
     }
 }

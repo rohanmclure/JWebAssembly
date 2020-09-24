@@ -24,6 +24,7 @@ import javax.annotation.Nonnegative;
 import javax.annotation.Nonnull;
 
 import de.inetsoftware.jwebassembly.WasmException;
+import de.inetsoftware.jwebassembly.jawa.JawaOpcodes;
 import de.inetsoftware.jwebassembly.module.WasmOptions;
 import de.inetsoftware.jwebassembly.wasm.AnyType;
 import de.inetsoftware.jwebassembly.wasm.LittleEndianOutputStream;
@@ -96,15 +97,53 @@ class WasmOutputStream extends LittleEndianOutputStream {
      *             if an I/O error occurs.
      */
     public void writeRefValueType( AnyType type ) throws IOException {
-        if( type.isRefType() ) {
+        if( type.isRefType() && type.getTypeOpcode() == null) {
             if( options.useGC() ) {
                 //TODO writeValueType( ValueType.ref_type );
                 type = ValueType.eqref;
             } else {
                 type = ValueType.externref;
             }
+            writeValueType(type);
+            return;
         }
-        writeValueType( type );
+        if (type.getJawaCode() != -1) {
+            writeValueType(ValueType.abstractref);
+            AnyType finalType = type;
+            writeValueType(new AnyType() {
+                @Override
+                public int getCode() {
+                    return finalType.getJawaCode();
+                }
+
+                @Override
+                public JawaOpcodes.JawaTypeOpcode getTypeOpcode() {
+                    return null;
+                }
+
+                @Override
+                public int getJawaCode() {
+                    return -1;
+                }
+
+                @Override
+                public boolean isRefType() {
+                    return false;
+                }
+
+                @Override
+                public boolean isSubTypeOf(AnyType type) {
+                    return false;
+                }
+
+                @Override
+                public boolean useRefType() {
+                    return false;
+                }
+            });
+        } else {
+            writeValueType(type);
+        }
     }
 
     /**

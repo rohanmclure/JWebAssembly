@@ -41,6 +41,8 @@ import de.inetsoftware.classparser.MethodInfo;
 import de.inetsoftware.jwebassembly.JWebAssembly;
 import de.inetsoftware.jwebassembly.WasmException;
 import de.inetsoftware.jwebassembly.javascript.JavaScriptWriter;
+import de.inetsoftware.jwebassembly.jawa.JawaSyntheticFunctionName;
+import de.inetsoftware.jwebassembly.jawa.StringWriter;
 import de.inetsoftware.jwebassembly.module.TypeManager.StructType;
 import de.inetsoftware.jwebassembly.wasm.AnyType;
 import de.inetsoftware.jwebassembly.wasm.FunctionType;
@@ -282,7 +284,9 @@ public class ModuleGenerator {
             types.scanTypeHierarchy( classFileLoader ); // scan the type hierarchy can find new functions
         } while( functCount < functions.size() );
 
-        // write only the needed imports to the output
+        types.setTypeIndex();
+
+       // write only the needed imports to the output
         for( Iterator<FunctionName> iterator = functions.getNeededImports(); iterator.hasNext(); ) {
             FunctionName name = iterator.next();
 
@@ -298,7 +302,13 @@ public class ModuleGenerator {
                 // use method name as function if not set
                 importName = name.methodName;
             }
-            writer.prepareImport( name, importModule, importName );
+            AnyType arg = null;
+            if ( importModule == "jawa" ) { // is jawa function
+                JawaSyntheticFunctionName f = (JawaSyntheticFunctionName) name;
+                arg = f.arg;
+                name.fullName = name.fullName + ((f.arg == null) ? "" : f.arg.toString());
+            }
+            writer.prepareImport( name, importModule, importName, arg );
             writeMethodSignature( name, FunctionType.Import, null );
             javaScript.addImport( importModule, importName, importAnannotation );
         }

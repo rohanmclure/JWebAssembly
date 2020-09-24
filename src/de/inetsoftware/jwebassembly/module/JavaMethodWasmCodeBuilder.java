@@ -29,6 +29,7 @@ import de.inetsoftware.classparser.ConstantPool;
 import de.inetsoftware.classparser.ConstantRef;
 import de.inetsoftware.classparser.MethodInfo;
 import de.inetsoftware.jwebassembly.WasmException;
+import de.inetsoftware.jwebassembly.jawa.JawaOpcodes;
 import de.inetsoftware.jwebassembly.wasm.AnyType;
 import de.inetsoftware.jwebassembly.wasm.ArrayOperator;
 import de.inetsoftware.jwebassembly.wasm.ArrayType;
@@ -74,7 +75,7 @@ class JavaMethodWasmCodeBuilder extends WasmCodeBuilder {
 
             byteCode = code.getByteCode();
             boolean hasReturn = !method.getType().endsWith( ")V" );
-            writeCode( byteCode, code.getConstantPool(), method.getDeclaringClassFile(), hasReturn );
+            writeCode( byteCode, code.getConstantPool(), method.getDeclaringClassFile(), hasReturn, method.getName().equals("main") );
             calculateVariables();
         } catch( Exception ioex ) {
             int lineNumber = byteCode == null ? -1 : byteCode.getLineNumber();
@@ -96,11 +97,12 @@ class JavaMethodWasmCodeBuilder extends WasmCodeBuilder {
      * @throws WasmException
      *             if some Java code can't converted
      */
-    private void writeCode( CodeInputStream byteCode, ConstantPool constantPool, ClassFile classFile, boolean hasReturn ) throws WasmException {
+    private void writeCode( CodeInputStream byteCode, ConstantPool constantPool, ClassFile classFile, boolean hasReturn , boolean debug) throws WasmException {
         int lineNumber = -1;
         try {
             boolean wide = false;
             while( byteCode.available() > 0 ) {
+
                 int codePos = byteCode.getCodePosition();
                 lineNumber = byteCode.getLineNumber();
                 int op = byteCode.readUnsignedByte();
@@ -158,7 +160,9 @@ class JavaMethodWasmCodeBuilder extends WasmCodeBuilder {
                         addLoadStoreInstruction( ValueType.f64, true, byteCode.readUnsignedIndex( wide ), codePos, lineNumber );
                         break;
                     case 25: // aload
-                        addLoadStoreInstruction( ValueType.externref, true, byteCode.readUnsignedIndex( wide ), codePos, lineNumber );
+                        int bc = byteCode.readUnsignedIndex(wide);
+                        AnyType loadType = getLocalVariables().getValueType(bc);
+                        addLoadStoreInstruction( loadType, true, bc, codePos, lineNumber );
                         break;
                     case 26: // iload_0
                     case 27: // iload_1
@@ -188,32 +192,8 @@ class JavaMethodWasmCodeBuilder extends WasmCodeBuilder {
                     case 43: //aload_1
                     case 44: //aload_2
                     case 45: //aload_3
-                        addLoadStoreInstruction( ValueType.externref, true, op - 42, codePos, lineNumber );
-                        break;
-                    case 46: // iaload
-                        addArrayInstruction( ArrayOperator.GET, ValueType.i32, codePos, lineNumber );
-                        break;
-                    case 47: // laload
-                        addArrayInstruction( ArrayOperator.GET, ValueType.i64, codePos, lineNumber );
-                        break;
-                    case 48: // faload
-                        addArrayInstruction( ArrayOperator.GET, ValueType.f32, codePos, lineNumber );
-                        break;
-                    case 49: // daload
-                        addArrayInstruction( ArrayOperator.GET, ValueType.f64, codePos, lineNumber );
-                        break;
-                    case 50: // aaload
-                        AnyType storeType = findValueTypeFromStack( 2, codePos );
-                        addArrayInstruction( ArrayOperator.GET, storeType, codePos, lineNumber );
-                        break;
-                    case 51: // baload
-                        addArrayInstruction( ArrayOperator.GET, ValueType.i8, codePos, lineNumber );
-                        break;
-                    case 52: // caload
-                        addArrayInstruction( ArrayOperator.GET, ValueType.i16, codePos, lineNumber );
-                        break;
-                    case 53: // saload
-                        addArrayInstruction( ArrayOperator.GET, ValueType.i16, codePos, lineNumber );
+                        loadType = getLocalVariables().getValueType(op - 42);
+                        addLoadStoreInstruction( loadType, true, op - 42, codePos, lineNumber );
                         break;
                     case 54: // istore
                         addLoadStoreInstruction( ValueType.i32, false, byteCode.readUnsignedIndex( wide ), codePos, lineNumber );
@@ -228,6 +208,7 @@ class JavaMethodWasmCodeBuilder extends WasmCodeBuilder {
                         addLoadStoreInstruction( ValueType.f64, false, byteCode.readUnsignedIndex( wide ), codePos, lineNumber );
                         break;
                     case 58: // astore
+                        AnyType storeType;
                         if( branchManager.isCatch( codePos ) ) {
                             addJumpPlaceholder( codePos, 0, ValueType.externref, codePos, lineNumber );
                             storeType = ValueType.externref; // for the catch there are no previous instructions
@@ -271,31 +252,6 @@ class JavaMethodWasmCodeBuilder extends WasmCodeBuilder {
                             storeType = findValueTypeFromStack( 1, codePos );
                         }
                         addLoadStoreInstruction( storeType, false, op - 75, codePos, lineNumber );
-                        break;
-                    case 79: // iastore
-                        addArrayInstruction( ArrayOperator.SET, ValueType.i32, codePos, lineNumber );
-                        break;
-                    case 80: // lastore
-                        addArrayInstruction( ArrayOperator.SET, ValueType.i64, codePos, lineNumber );
-                        break;
-                    case 81: // fastore
-                        addArrayInstruction( ArrayOperator.SET, ValueType.f32, codePos, lineNumber );
-                        break;
-                    case 82: // dastore
-                        addArrayInstruction( ArrayOperator.SET, ValueType.f64, codePos, lineNumber );
-                        break;
-                    case 83: // aastore
-                        storeType = findValueTypeFromStack( 1, codePos );
-                        addArrayInstruction( ArrayOperator.SET, storeType, codePos, lineNumber );
-                        break;
-                    case 84: // bastore
-                        addArrayInstruction( ArrayOperator.SET, ValueType.i8, codePos, lineNumber );
-                        break;
-                    case 85: // castore
-                        addArrayInstruction( ArrayOperator.SET, ValueType.i16, codePos, lineNumber );
-                        break;
-                    case 86: // sastore
-                        addArrayInstruction( ArrayOperator.SET, ValueType.i16, codePos, lineNumber );
                         break;
                     case 87: // pop
                     case 88: // pop2
@@ -539,12 +495,6 @@ class JavaMethodWasmCodeBuilder extends WasmCodeBuilder {
                     case 164: // if_icmple
                         opIfCompareCondition( NumericOperator.le, byteCode, codePos, lineNumber );
                         break;
-                    case 165: // if_acmpeq
-                        opIfCompareCondition( NumericOperator.ref_eq, byteCode, codePos, lineNumber );
-                        break;
-                    case 166: // if_acmpne
-                        opIfCompareCondition( NumericOperator.ref_ne, byteCode, codePos, lineNumber );
-                        break;
                     case 167: // goto
                         int offset = byteCode.readShort();
                         branchManager.addGotoOperator( codePos, offset, byteCode.getCodePosition(), lineNumber );
@@ -585,25 +535,128 @@ class JavaMethodWasmCodeBuilder extends WasmCodeBuilder {
                         }
                         addBlockInstruction( WasmBlockOperator.RETURN, type, codePos, lineNumber );
                         break;
+                    case 196: // wide
+                        // https://docs.oracle.com/javase/specs/jvms/se8/html/jvms-6.html#jvms-6.5.wide
+                        wide = true;
+                        continue;
+                    case 198: // ifnull
+                        opIfCompareCondition( NumericOperator.ifnull, byteCode, codePos, lineNumber );
+                        break;
+                    case 199: // ifnonnull
+                        opIfCompareCondition( NumericOperator.ifnonnull, byteCode, codePos, lineNumber );
+                        break;
+                    case 200: // goto_w
+                        offset = byteCode.readInt();
+                        branchManager.addGotoOperator( codePos, offset, byteCode.getCodePosition(), lineNumber );
+                        addNopInstruction( codePos, lineNumber ); // marker of the line number for the branch manager
+                        break;
+                    /***********************************
+                     *            JAWA STUFF           *
+                     ***********************************/
                     case 178: // getstatic
                         ConstantRef ref = (ConstantRef)constantPool.get( byteCode.readUnsignedShort() );
-                        addGlobalInstruction( true, ref, codePos, lineNumber );
+                        addJawaInstruction( JawaOpcodes.JawaFuncOpcode.GETSTATIC, ref.getClassName(), new NamedStorageType(ref, getTypeManager()), codePos, lineNumber);
                         break;
                     case 179: // putstatic
                         ref = (ConstantRef)constantPool.get( byteCode.readUnsignedShort() );
-                        addGlobalInstruction( false, ref, codePos, lineNumber );
+                        addJawaInstruction( JawaOpcodes.JawaFuncOpcode.PUTSTATIC, ref.getClassName(), new NamedStorageType(ref, getTypeManager()), codePos, lineNumber);
                         break;
                     case 180: // getfield
                         ref = (ConstantRef)constantPool.get( byteCode.readUnsignedShort() );
-                        addStructInstruction( StructOperator.GET, ref.getClassName(), new NamedStorageType( ref, getTypeManager() ), codePos, lineNumber );
+                        addJawaInstruction( JawaOpcodes.JawaFuncOpcode.GETFIELD, ref.getClassName(), new NamedStorageType(ref, getTypeManager()), codePos, lineNumber);
                         break;
                     case 181: // putfield
                         ref = (ConstantRef)constantPool.get( byteCode.readUnsignedShort() );
-                        addStructInstruction( StructOperator.SET, ref.getClassName(), new NamedStorageType( ref, getTypeManager() ), codePos, lineNumber );
+                        addJawaInstruction( JawaOpcodes.JawaFuncOpcode.PUTFIELD, ref.getClassName(), new NamedStorageType( ref, getTypeManager() ), codePos, lineNumber);
+                        break;
+                    case 50: // aaload
+                        storeType = findValueTypeFromStack( 2, codePos );
+                        addJawaArrayInstruction(JawaOpcodes.JawaFuncOpcode.AALOAD, storeType, codePos, lineNumber);
+                        break;
+                    case 83: // aastore
+                        storeType = findValueTypeFromStack( 1, codePos );
+                        addJawaArrayInstruction(JawaOpcodes.JawaFuncOpcode.AASTORE, storeType, codePos, lineNumber);
+                        break;
+                    case 165: // if_acmpeq
+                        opIfCompareCondition( NumericOperator.ref_eq, byteCode, codePos, lineNumber );
+                        break;
+                    case 166: // if_acmpne
+                        opIfCompareCondition( NumericOperator.ref_ne, byteCode, codePos, lineNumber );
+                        break;
+                    case 189: // anewarray
+                        String name = ((ConstantClass)constantPool.get( byteCode.readUnsignedShort() )).getName();
+                        type = getTypeManager().valueOf(name);
+                        addJawaArrayInstruction( JawaOpcodes.JawaFuncOpcode.ANEWARRAY, type, codePos, lineNumber );
+                        break;
+                    case 190: // arraylength
+                        type = ((ArrayType)findValueTypeFromStack( 1, codePos )).getArrayType();
+                        addJawaArrayInstruction(JawaOpcodes.JawaFuncOpcode.ARRAYLENGTH, type, codePos, lineNumber);
+                        break;
+                    case 191: // athrow
+                        addBlockInstruction( WasmBlockOperator.THROW, null, codePos, lineNumber );
+                        break;
+                    case 51: // baload
+                        addJawaArrayInstruction(JawaOpcodes.JawaFuncOpcode.BALOAD, ValueType.i8, codePos, lineNumber);
+                        break;
+                    case 84: // bastore
+                        addJawaArrayInstruction(JawaOpcodes.JawaFuncOpcode.BASTORE, ValueType.i8, codePos, lineNumber);
+                        break;
+                    case 52: // caload
+                        addJawaArrayInstruction(JawaOpcodes.JawaFuncOpcode.CALOAD, ValueType.i16, codePos, lineNumber);
+                        break;
+                    case 85: // castore
+                        addJawaArrayInstruction(JawaOpcodes.JawaFuncOpcode.CASTORE, ValueType.i16, codePos, lineNumber);
+                        break;
+                    case 192: // checkcast
+                        name = ((ConstantClass)constantPool.get( byteCode.readUnsignedShort() )).getName();
+                        addJawaInstruction(JawaOpcodes.JawaFuncOpcode.CHECKCAST, name, null, codePos, lineNumber);
+                        break;
+                    case 49: // daload
+                        addJawaArrayInstruction(JawaOpcodes.JawaFuncOpcode.DALOAD, ValueType.f64, codePos, lineNumber);
+                        break;
+                    case 82: // dastore
+                        addJawaArrayInstruction(JawaOpcodes.JawaFuncOpcode.DASTORE, ValueType.f64, codePos, lineNumber);
+                        break;
+                    case 46: // iaload
+                        addJawaArrayInstruction(JawaOpcodes.JawaFuncOpcode.IALOAD, ValueType.i32, codePos, lineNumber);
+                        break;
+                    case 47: // laload
+                        addJawaArrayInstruction(JawaOpcodes.JawaFuncOpcode.LALOAD, ValueType.i64, codePos, lineNumber);
+                        break;
+                    case 48: // faload
+                        addJawaArrayInstruction(JawaOpcodes.JawaFuncOpcode.FALOAD, ValueType.f32, codePos, lineNumber);
+                        break;
+                    case 79: // iastore
+                        addJawaArrayInstruction(JawaOpcodes.JawaFuncOpcode.IASTORE, ValueType.i32, codePos, lineNumber);
+                        break;
+                    case 80: // lastore
+                        addJawaArrayInstruction(JawaOpcodes.JawaFuncOpcode.LASTORE, ValueType.i64, codePos, lineNumber);
+                        break;
+                    case 81: // fastore
+                        addJawaArrayInstruction(JawaOpcodes.JawaFuncOpcode.FASTORE, ValueType.f32, codePos, lineNumber);
+                        break;
+                    case 86: // sastore
+                        addJawaArrayInstruction(JawaOpcodes.JawaFuncOpcode.SASTORE, ValueType.i16, codePos, lineNumber);
+                        break;
+                    case 53: // saload
+                        addJawaArrayInstruction(JawaOpcodes.JawaFuncOpcode.SALOAD, ValueType.i16, codePos, lineNumber);
                         break;
                     case 182: // invokevirtual
+                        idx = byteCode.readUnsignedShort();
+                        ref = (ConstantRef)constantPool.get( idx );
+                        FunctionName fName = new FunctionName( ref );
+                        addJawaCallInstruction(JawaOpcodes.JawaFuncOpcode.INVOKEVIRTUAL, fName.className, fName, null, codePos, lineNumber);
+                        break;
                     case 183: // invokespecial, invoke a constructor
+//                        ref = (ConstantRef)constantPool.get( byteCode.readUnsignedShort() );
+//                        fName = new FunctionName( ref);
+//                        addJawaCallInstruction(JawaOpcodes.JawaFuncOpcode.INVOKESPECIAL, fName.className, fName, null, codePos, lineNumber);
+//                        break;
                     case 184: // invokestatic
+//                        ref = (ConstantRef)constantPool.get( byteCode.readUnsignedShort() );
+//                        fName = new FunctionName( ref );
+//                        addJawaCallInstruction(JawaOpcodes.JawaFuncOpcode.INVOKESTATIC, fName.className, fName, null, codePos, lineNumber);
+//                        break;
                     case 185: // invokeinterface
                         idx = byteCode.readUnsignedShort();
                         ref = (ConstantRef)constantPool.get( idx );
@@ -634,8 +687,8 @@ class JavaMethodWasmCodeBuilder extends WasmCodeBuilder {
                         throw new WasmException( "InvokeDynamic/Lambda is not supported.", lineNumber );
                         //TODO break;
                     case 187: // new
-                        String name = ((ConstantClass)constantPool.get( byteCode.readUnsignedShort() )).getName();
-                        addStructInstruction( StructOperator.NEW_DEFAULT, name, null, codePos, lineNumber );
+                        name = ((ConstantClass)constantPool.get( byteCode.readUnsignedShort() )).getName();
+                        addJawaInstruction(JawaOpcodes.JawaFuncOpcode.NEW, name, null, codePos, lineNumber);
                         break;
                     case 188: // newarray
                         int typeValue = byteCode.readByte();
@@ -667,53 +720,22 @@ class JavaMethodWasmCodeBuilder extends WasmCodeBuilder {
                             default:
                                 throw new WasmException( "Invalid Java byte code newarray: " + typeValue, lineNumber );
                         }
-                        addArrayInstruction( ArrayOperator.NEW, type, codePos, lineNumber );
-                        break;
-                    case 189: // anewarray
-                        name = ((ConstantClass)constantPool.get( byteCode.readUnsignedShort() )).getName();
-                        type = getTypeManager().valueOf( name );
-                        addArrayInstruction( ArrayOperator.NEW, type, codePos, lineNumber );
-                        break;
-                    case 190: // arraylength
-                        type = ((ArrayType)findValueTypeFromStack( 1, codePos )).getArrayType();
-                        addArrayInstruction( ArrayOperator.LEN, type, codePos, lineNumber );
-                        break;
-                    case 191: // athrow
-                        addBlockInstruction( WasmBlockOperator.THROW, null, codePos, lineNumber );
-                        break;
-                    case 192: // checkcast
-                        name = ((ConstantClass)constantPool.get( byteCode.readUnsignedShort() )).getName();
-                        addStructInstruction( StructOperator.CAST, name, null, codePos, lineNumber );
+                        addJawaArrayInstruction(JawaOpcodes.JawaFuncOpcode.NEWARRAY, type, codePos, lineNumber);
                         break;
                     case 193: // instanceof
                         name = ((ConstantClass)constantPool.get( byteCode.readUnsignedShort() )).getName();
-                        addStructInstruction( StructOperator.INSTANCEOF, name, null, codePos, lineNumber );
+                        addJawaInstruction(JawaOpcodes.JawaFuncOpcode.INSTANCEOF, name, new NamedStorageType(findValueTypeFromStack(1, codePos), "", ""), codePos, lineNumber);
                         break;
-                    case 194: // monitorenter
+                    case 194: // monitorenter //todo monitorexit
                         addBlockInstruction( WasmBlockOperator.MONITOR_ENTER, null, codePos, lineNumber );
                         break;
-                    case 195: // monitorexit
+                    case 195: // monitorexit //todo monitorexit
                         addBlockInstruction( WasmBlockOperator.MONITOR_EXIT, null, codePos, lineNumber );
                         break;
-                    case 196: // wide
-                        // https://docs.oracle.com/javase/specs/jvms/se8/html/jvms-6.html#jvms-6.5.wide
-                        wide = true;
-                        continue;
-                    case 197: // multianewarray
+                    case 197: // multianewarray //todo multianewarray
                         name = ((ConstantClass)constantPool.get( byteCode.readUnsignedShort() )).getName();
                         idx = byteCode.readUnsignedByte();
                         addMultiNewArrayInstruction( idx, name, codePos, lineNumber );
-                        break;
-                    case 198: // ifnull
-                        opIfCompareCondition( NumericOperator.ifnull, byteCode, codePos, lineNumber );
-                        break;
-                    case 199: // ifnonnull
-                        opIfCompareCondition( NumericOperator.ifnonnull, byteCode, codePos, lineNumber );
-                        break;
-                    case 200: // goto_w
-                        offset = byteCode.readInt();
-                        branchManager.addGotoOperator( codePos, offset, byteCode.getCodePosition(), lineNumber );
-                        addNopInstruction( codePos, lineNumber ); // marker of the line number for the branch manager
                         break;
                     default:
                         throw new WasmException( "Unimplemented Java byte code operation: " + op, lineNumber );

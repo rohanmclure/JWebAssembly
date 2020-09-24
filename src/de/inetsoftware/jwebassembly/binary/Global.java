@@ -18,6 +18,8 @@ package de.inetsoftware.jwebassembly.binary;
 import java.io.IOException;
 
 import de.inetsoftware.jwebassembly.wasm.AnyType;
+import de.inetsoftware.jwebassembly.wasm.ValueType;
+
 
 /**
  * An entry in the global section of the WebAssembly.

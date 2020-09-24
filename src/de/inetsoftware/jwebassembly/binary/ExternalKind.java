@@ -27,4 +27,8 @@ enum ExternalKind {
     Memory,
     Global,
     Event,
+    Type, // 0x05
+    TypeImport, // 0x06
+    Command, // 0x07
+    Args // 0x08
 }

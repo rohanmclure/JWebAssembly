@@ -32,6 +32,9 @@ import de.inetsoftware.classparser.Member;
 import de.inetsoftware.classparser.MethodInfo;
 import de.inetsoftware.jwebassembly.WasmException;
 import de.inetsoftware.jwebassembly.javascript.NonGC;
+import de.inetsoftware.jwebassembly.jawa.JawaOpcodes;
+import de.inetsoftware.jwebassembly.jawa.JawaSyntheticFunctionName;
+import de.inetsoftware.jwebassembly.jawa.StringWriter;
 import de.inetsoftware.jwebassembly.module.StackInspector.StackValue;
 import de.inetsoftware.jwebassembly.module.WasmInstruction.Type;
 import de.inetsoftware.jwebassembly.wasm.AnyType;
@@ -275,7 +278,7 @@ public abstract class WasmCodeBuilder {
      *            the line number in the Java source code
      */
     protected void addLoadStoreInstruction( AnyType valueType, boolean load, @Nonnegative int javaIdx, int javaCodePos, int lineNumber ) {
-        localVariables.use( valueType, javaIdx, javaCodePos );
+//        localVariables.use( valueType, javaIdx, javaCodePos );
         instructions.add( new WasmLoadStoreInstruction( load ? VariableOperator.get : VariableOperator.set, javaIdx, localVariables, javaCodePos, lineNumber ) );
     }
 
@@ -409,6 +412,21 @@ public abstract class WasmCodeBuilder {
         functions.markClassAsUsed( name.className );
     }
 
+    protected void addJawaGlobalStringInstruction( boolean load, String s, int javaCodePos, int lineNumber) {
+        StringWriter fname = new StringWriter();
+        try {
+            fname.write(JawaOpcodes.JawaGlobalOpcode.STRING_CONST.opcode);
+            fname.writeString(s); // maybe change to writename
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        FunctionName functionName = new JawaSyntheticFunctionName(null, "jawa", fname.toString(), null);
+        AnyType type = new ValueTypeParser("Ljava/lang/String;", types).next();
+
+        instructions.add(new WasmGlobalInstruction(load, functionName, type, javaCodePos, lineNumber));
+
+    }
+
     /**
      * Add a WasmTableInstruction table.get/table.set.
      * 
@@ -453,14 +471,10 @@ public abstract class WasmCodeBuilder {
      */
     protected void addConstInstruction( Object value, int javaCodePos, int lineNumber ) {
         if( value.getClass() == String.class ) {
-            Integer id = strings.get( value );
-            FunctionName name = strings.getStringConstantFunction();
-            instructions.add( new WasmConstInstruction( id, ValueType.i32, javaCodePos, lineNumber ) );
-            String comment = (String)value;
-            if( !isAscii( comment ) ) {
-                comment = null;
-            }
-            instructions.add( new WasmCallInstruction( name, javaCodePos, lineNumber, types, false, comment ) );
+            // Import the jawa function
+            // Create a global with the new name
+            // Add new instruction global.get id
+            addJawaGlobalStringInstruction(true, value.toString(), javaCodePos, lineNumber);
         } else if( value instanceof Number ) {
             instructions.add( new WasmConstInstruction( (Number)value, javaCodePos, lineNumber ) );
         } else if( value instanceof ConstantClass ) {
@@ -549,7 +563,6 @@ public abstract class WasmCodeBuilder {
             // check if there a factory for the constructor in JavaScript then we need to do some more complex patching
             Function<String, Object> importAnannotation = functions.getImportAnannotation( name );
             FunctionName factoryName = null;
-
             if( importAnannotation != null ) { // JavaScript replacement for a constructor via import
                 // The new signature need a return value. The <init> of Java has ever a void return value
                 String signature = name.signature;
@@ -560,6 +573,9 @@ public abstract class WasmCodeBuilder {
                 if( replace != null && !"<init>".equals( replace.getName() ) ) {
                     // the constructor was replaced with a factory method. Typical this method called then a JavaScript replacement
                     factoryName = new FunctionName( replace );
+                    if (factoryName.methodName.equals("string_init")) {
+                        factoryName = null;
+                    }
                 }
             }
 
@@ -778,6 +794,60 @@ public abstract class WasmCodeBuilder {
     protected void addMultiNewArrayInstruction( int dim, ArrayType type, int javaCodePos, int lineNumber ) {
         MultiArrayFunctionName name = new MultiArrayFunctionName( dim, type );
         addCallInstruction( name, javaCodePos, lineNumber );
+    }
+
+    /**
+     * Add a JAWA operation to the instruction list
+     * @param op the operation
+     * @param typeName the type name
+     * @param javaCodePos the code position / offset in the Java method
+     * @param lineNumber the line number in the Java source code
+     */
+    protected void addJawaInstruction (JawaOpcodes.JawaFuncOpcode op, @Nonnull String typeName, @Nonnull NamedStorageType fieldName, int javaCodePos, int lineNumber ) {
+        WasmJawaInstruction jawaInstruction = new WasmJawaInstruction( op, typeName, fieldName, javaCodePos, lineNumber, types );
+        instructions.add( jawaInstruction );
+        SyntheticFunctionName name = jawaInstruction.createJawaFunction();
+        functions.markClassAsUsed( name.className );
+        if (name != null) {
+            functions.markAsNeeded( name );
+            functions.markAsImport(name, name.getAnnotation());
+        }
+    }
+
+    /**
+     * Add a JAWA operation to the instruction list
+     * @param op the operation
+     * @param javaCodePos the code position / offset in the Java method
+     * @param lineNumber the line number in the Java source code
+     */
+    protected void addJawaArrayInstruction (JawaOpcodes.JawaFuncOpcode op, AnyType type, int javaCodePos, int lineNumber ) {
+        WasmJawaArrayInstruction jawaInstruction = new WasmJawaArrayInstruction( op, type, types, javaCodePos, lineNumber );
+        instructions.add( jawaInstruction );
+        SyntheticFunctionName name = jawaInstruction.createJawaFunction();
+        if (name != null) {
+            functions.markAsNeeded( name );
+            functions.markAsImport(name, name.getAnnotation());
+        }
+    }
+
+    /**
+     * Add a JAWA operation to the instruction list
+     * @param op the operation
+     * @param typeName the type name
+     * @param javaCodePos the code position / offset in the Java method
+     * @param lineNumber the line number in the Java source code
+     */
+    protected void addJawaCallInstruction (JawaOpcodes.JawaFuncOpcode op, @Nonnull String typeName, @Nonnull FunctionName fName, @Nonnull NamedStorageType fieldName, int javaCodePos, int lineNumber ) {
+        fName = functions.markAsNeeded( fName );
+        functions.markClassAsUsed( fName.className );
+        boolean needThisParameter = functions.needThisParameter( fName );
+        WasmJawaCallInstruction jawaInstruction = new WasmJawaCallInstruction( op, typeName, fName, needThisParameter, javaCodePos, lineNumber, types );
+        instructions.add( jawaInstruction );
+        SyntheticFunctionName name = jawaInstruction.createJawaFunction();
+        if (name != null) {
+            functions.markAsNeeded( name );
+            functions.markAsImport(name, name.getAnnotation());
+        }
     }
 
     /**
