@@ -5,17 +5,18 @@ import de.inetsoftware.jwebassembly.jawa.RunTest;
 
 import static de.inetsoftware.jwebassembly.jawa.Print.puti;
 
-@RunTest(input = "1", output = "334")
-public class for03 {
-    static int t(int a) {
-        for (; a != 0; ) {
-            a = 0;
-        }
-        return 334;
+@RunTest(input="",intInput=9,output="9")
+@RunTest(input="",intInput=100,output="100")
+public class static_field01 {
+    static int f;
+
+    static int n(int x) {
+        static_field01.f = x;
+        return static_field01.f;
     }
 
     @Export
     public static void main(String[] args) {
-        puti(t(args.length));
+        puti(n(args.length));
     }
 }

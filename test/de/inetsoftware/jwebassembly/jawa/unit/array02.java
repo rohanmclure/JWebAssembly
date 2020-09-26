@@ -5,17 +5,17 @@ import de.inetsoftware.jwebassembly.jawa.RunTest;
 
 import static de.inetsoftware.jwebassembly.jawa.Print.puti;
 
-@RunTest(input = "1", output = "334")
-public class for03 {
-    static int t(int a) {
-        for (; a != 0; ) {
-            a = 0;
-        }
-        return 334;
+@RunTest(input="",intInput=9,output="9")
+@RunTest(input="",intInput=120,output="120")
+public class array02 {
+    static int m(int x) {
+        int[] y = new int[x];
+        y[x - 1] = x;
+        return y[x - 1];
     }
 
     @Export
     public static void main(String[] args) {
-        puti(t(args.length));
+        puti(m(args.length));
     }
 }

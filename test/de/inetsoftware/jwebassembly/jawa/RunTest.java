@@ -30,4 +30,6 @@ public @interface RunTest {
 
     String output();
 
+    int intInput() default -1;
+
 }

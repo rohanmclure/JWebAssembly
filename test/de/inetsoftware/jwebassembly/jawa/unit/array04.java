@@ -5,11 +5,14 @@ import de.inetsoftware.jwebassembly.jawa.RunTest;
 
 import static de.inetsoftware.jwebassembly.jawa.Print.puts;
 
-@RunTest(input = "", output = "true")
-public class null00 {
-    static boolean m(int a) {
-        String s = null;
-        return s == null;
+@RunTest(input="",intInput=4,output="true")
+@RunTest(input="",intInput=127,output="true")
+public class array04 {
+    static boolean m(int x) {
+        String[] y = new String[x];
+        String s = "foo";
+        y[0] = s;
+        return y[0] == s;
     }
 
     @Export

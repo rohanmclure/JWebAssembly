@@ -8,14 +8,14 @@ import static de.inetsoftware.jwebassembly.jawa.Print.puti;
 @RunTest(input = "1", output = "123")
 public class for02 {
     static int t(int a) {
-		for (int i = 0; i < 1000; i++) {
-			return 123;
-		}
-		return a;
+        for (int i = 0; i < 1000; i++) {
+            return 123;
+        }
+        return a;
     }
 
     @Export
-	public static void main(String[] args) {
-		puti(t(args.length));
-	}
+    public static void main(String[] args) {
+        puti(t(args.length));
+    }
 }

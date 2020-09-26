@@ -99,6 +99,27 @@ public class RunJawaTests {
     public void args09() { run( args09.class ); }
 
     @Test
+    public void array01() { run( array01.class ); }
+
+    @Test
+    public void array02() { run( array02.class ); }
+
+    @Test
+    public void array03() { run( array03.class ); }
+
+    @Test
+    public void array04() { run( array04.class ); }
+
+    @Test
+    public void array05() { run( array05.class ); }
+
+    @Test
+    public void array06() { run( array06.class ); }
+
+    @Test
+    public void array07() { run( array07.class ); }
+
+    @Test
     public void arraylength00() { run( arraylength00.class ); }
 
     @Test
@@ -151,6 +172,30 @@ public class RunJawaTests {
 
     @Test
     public void null02() { run( null02.class ); }
+
+    @Test
+    public void static_call01() { run( static_call01.class ); }
+
+    @Test
+    public void static_call02() { run( static_call02.class ); }
+
+    @Test
+    public void static_call03() { run( static_call03.class ); }
+
+    @Test
+    public void static_field01() { run( static_field01.class ); }
+
+    @Test
+    public void static_field02() { run( static_field02.class ); }
+
+    @Test
+    public void static_field03() { run( static_field03.class ); }
+
+    @Test
+    public void static_field04() { run( static_field04.class ); }
+
+    @Test
+    public void static_field05() { run( static_field05.class ); }
 
     @Test
     public void syscall01() { run( syscall01.class ); }
@@ -223,13 +268,24 @@ public class RunJawaTests {
 
     void RunTestCase(RunTest test, File binary) {
         try {
-            Process proc = Runtime.getRuntime().exec(JAWA_DIR + " " + binary.getCanonicalPath() + " " + test.input());
+            String input = test.input();
+            if (test.intInput() >= 0) {
+                StringBuilder intInputBuilder = new StringBuilder();
+                for (int i = 1; i < test.intInput(); i++) {
+                    intInputBuilder.append(i);
+                    intInputBuilder.append(' ');
+                }
+                if (test.intInput() != 0) intInputBuilder.append(test.intInput());
+                input = intInputBuilder.toString();
+            }
+
+            Process proc = Runtime.getRuntime().exec(JAWA_DIR + " " + binary.getCanonicalPath() + " " + input);
             proc.waitFor();
             InputStream in = proc.getInputStream();
             byte b[] = new byte[in.available()];
             in.read(b, 0, b.length);
             String output = new String(b);
-            Assert.assertEquals("Ran input \"" + test.input() + "\"", test.output(), output);
+            Assert.assertEquals("Ran input \"" + input + "\"", test.output(), output);
         } catch (IOException | InterruptedException e) {
             e.printStackTrace();
         }

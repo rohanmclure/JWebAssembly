@@ -66,13 +66,24 @@ public class Empty {
 
     void RunTestCase(RunTest test, File binary) {
         try {
-            Process proc = Runtime.getRuntime().exec(JAWA_DIR + " " + binary.getCanonicalPath() + " " + test.input());
+            String input = test.input();
+            if (test.intInput() >= 0) {
+                StringBuilder intInputBuilder = new StringBuilder();
+                for (int i = 1; i < test.intInput(); i++) {
+                    intInputBuilder.append(i);
+                    intInputBuilder.append(' ');
+                }
+                if (test.intInput() != 0) intInputBuilder.append(test.intInput());
+                input = intInputBuilder.toString();
+            }
+
+            Process proc = Runtime.getRuntime().exec(JAWA_DIR + " " + binary.getCanonicalPath() + " " + input);
             proc.waitFor();
             InputStream in = proc.getInputStream();
             byte b[] = new byte[in.available()];
             in.read(b, 0, b.length);
             String output = new String(b);
-            Assert.assertEquals("Ran input \"" + test.input() + "\"", test.output(), output);
+            Assert.assertEquals("Ran input \"" + input + "\"", test.output(), output);
         } catch (IOException | InterruptedException e) {
             e.printStackTrace();
         }
