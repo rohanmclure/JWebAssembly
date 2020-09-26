@@ -36,11 +36,54 @@ public class JawaSignature {
         return jawaTypes;
     }
 
+    public static String getTypeName(String type) {
+        switch (type) {
+            case "Z": // boolean
+            case "B": // byte
+            case "C": // char
+            case "S": // short
+            case "I": // int
+            case "D": // double
+            case "F": // float
+            case "J": // long
+            case "V": // void
+                return type;
+            default:
+                return "L";
+        }
+    }
+
+    public static AnyType getJawaType(String type, TypeManager types) {
+        boolean array = type.toCharArray()[0] == '[';
+        type = array ? type.substring(1) : type;
+        switch (type.toCharArray()[0]) {
+            case 'Z': // boolean
+                if (array) return types.arrayType(ValueType.bool);
+            case 'B': // byte
+            case 'C': // char
+                if (array) return types.arrayType(ValueType.i8);
+            case 'S': // short
+                if (array) return types.arrayType(ValueType.i16);
+            case 'I': // int
+                if (array) return types.arrayType(ValueType.i32);
+            case 'D': // double
+                if (array) return types.arrayType(ValueType.f64);
+            case 'F': // float
+                if (array) return types.arrayType(ValueType.f32);
+            case 'J': // long
+                if (array) return types.arrayType(ValueType.i64);
+            case 'V': // void
+                return null;
+            default:
+                type = type.substring(1, type.length() - 1);
+                return array ? types.arrayType(types.valueOf(type)) : types.valueOf(type);
+        }
+    }
+
     public void processJawa() {
         StringBuilder sb = new StringBuilder();
         for (int i = 0; i < sig.length(); i++) {
             char s = sig.toCharArray()[i];
-            boolean array = false;
             switch (s) {
                 case '[':
                     i++;

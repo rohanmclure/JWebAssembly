@@ -140,8 +140,6 @@ public class TypeManager {
 
     private Map<Object, StructType> structTypes = new LinkedHashMap<>();
 
-    private int jawaTypes = 0;
-
     private final LinkedHashSet<StructType> orderedStructTypes = new LinkedHashSet<>();
 
     private boolean                 isFinish;
@@ -677,7 +675,12 @@ public class TypeManager {
             for (FieldInfo field : instanceFields) {
                 importName.writeName(field.getName()); // field name
                 importName.writeJI2(JawaAttributes.JawaFieldAttr.convertTo(field.getAccessFlags())); // access flags
-                importName.writeSig(field.getType());
+                AnyType type = JawaSignature.getJawaType(field.getType(), types);
+                if (type == null) importName.writeSig(field.getType());
+                else {
+                    importName.writeSig("L");
+                    args.add(new ImportArguments.AnyType(type));
+                }
             }
             importName.writeJI4(instanceMethods.size());
             for (MethodInfo method : instanceMethods) {
@@ -699,7 +702,12 @@ public class TypeManager {
             for (FieldInfo field : staticFields) {
                 importName.writeName(field.getName()); // field name
                 importName.writeJI2(JawaAttributes.JawaFieldAttr.convertTo(field.getAccessFlags())); // access flags
-                importName.writeSig(field.getType());
+                AnyType type = JawaSignature.getJawaType(field.getType(), types);
+                if (type == null) importName.writeSig(field.getType());
+                else {
+                    importName.writeSig("L");
+                    args.add(new ImportArguments.AnyType(type));
+                }
             }
             importName.writeJI4(staticMethods.size());
             for (MethodInfo method : staticMethods) {
