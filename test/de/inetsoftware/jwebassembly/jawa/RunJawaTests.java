@@ -114,6 +114,36 @@ public class RunJawaTests {
     public void for03() { run( for03.class ); }
 
     @Test
+    public void instance_field01() { run( instance_field01.class ); }
+
+    @Test
+    public void instance_field02() { run( instance_field02.class ); }
+
+    @Test
+    public void instance_field03() { run( instance_field03.class ); }
+
+    @Test
+    public void instance_field04() { run( instance_field04.class ); }
+
+    @Test
+    public void instance_field05() { run( instance_field05.class ); }
+
+    @Test
+    public void instance_field06() { run( instance_field06.class ); }
+
+    @Test
+    public void instance_field07() { run( instance_field07.class ); }
+
+    @Test
+    public void instance_meth00() { run( instance_meth00.class ); }
+
+    @Test
+    public void instance_meth01() { run( instance_meth01.class ); }
+
+    @Test
+    public void instance_meth02() { run( instance_meth02.class ); }
+
+    @Test
     public void null00() { run( null00.class ); }
 
     @Test
