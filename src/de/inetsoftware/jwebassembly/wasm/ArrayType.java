@@ -131,8 +131,9 @@ public class ArrayType extends StructType {
             case i16:
             case u16:
                 return SHORT_ARRAY;
+            default:
+                throw new WasmException("Invalid type in array " + arrayType.toString() + " for " + this.toString() , -1);
         }
-        return null;
     }
 
     @Override

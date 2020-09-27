@@ -803,8 +803,8 @@ public abstract class WasmCodeBuilder {
      * @param javaCodePos the code position / offset in the Java method
      * @param lineNumber the line number in the Java source code
      */
-    protected void addJawaInstruction (JawaOpcodes.JawaFuncOpcode op, @Nonnull String typeName, @Nonnull NamedStorageType fieldName, int javaCodePos, int lineNumber ) {
-        WasmJawaInstruction jawaInstruction = new WasmJawaInstruction( op, typeName, fieldName, javaCodePos, lineNumber, types );
+    protected void addJawaStructInstruction(JawaOpcodes.JawaFuncOpcode op, @Nonnull String typeName, @Nonnull NamedStorageType fieldName, int javaCodePos, int lineNumber ) {
+        WasmJawaStructInstruction jawaInstruction = new WasmJawaStructInstruction( op, typeName, fieldName, javaCodePos, lineNumber, types );
         instructions.add( jawaInstruction );
         SyntheticFunctionName name = jawaInstruction.createJawaFunction();
         functions.markClassAsUsed( name.className );

@@ -36,7 +36,7 @@ import java.util.List;
  * @author Brenda Wang
  *
  */
-class WasmJawaInstruction extends WasmInstruction {
+class WasmJawaStructInstruction extends WasmInstruction {
 
     private final JawaOpcodes.JawaFuncOpcode op;
 
@@ -64,7 +64,7 @@ class WasmJawaInstruction extends WasmInstruction {
      * @param types
      *            the type manager
      */
-    WasmJawaInstruction(@Nullable JawaOpcodes.JawaFuncOpcode op, @Nullable String typeName, @Nullable NamedStorageType fieldName, int javaCodePos, int lineNumber, TypeManager types ) {
+    WasmJawaStructInstruction(@Nullable JawaOpcodes.JawaFuncOpcode op, @Nullable String typeName, @Nullable NamedStorageType fieldName, int javaCodePos, int lineNumber, TypeManager types ) {
         super( javaCodePos, lineNumber );
         this.op = op;
         this.type = typeName == null ? null : types.valueOf( typeName );

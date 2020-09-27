@@ -53,7 +53,7 @@ class WasmJawaArrayInstruction extends WasmInstruction {
      * @param type
      *            the type of the parameters
      * @param types
-     *            the type manager
+     *            the type managerdustbunny
      * @param javaCodePos
      *            the code position/offset in the Java method
      * @param lineNumber
@@ -101,10 +101,10 @@ class WasmJawaArrayInstruction extends WasmInstruction {
                     functionName = new JawaSyntheticFunctionName(null, moduleName, funcName.toString(), null, type, null);
                     return functionName;
                 case AALOAD:
-                    functionName = new JawaSyntheticFunctionName(type, moduleName, funcName.toString(), (TypeManager.StructType) type, type, ValueType.i32, null, ((ArrayType) type).getArrayType());
+                    functionName = new JawaSyntheticFunctionName(type, moduleName, funcName.toString(), null, type, ValueType.i32, null, ((ArrayType) type).getArrayType());
                     return functionName;
                 case AASTORE:
-                    functionName = new JawaSyntheticFunctionName(type, moduleName, funcName.toString(), (TypeManager.StructType) type,types.arrayType(type), ValueType.i32, type, null);
+                    functionName = new JawaSyntheticFunctionName(type, moduleName, funcName.toString(), null,types.arrayType(type), ValueType.i32, type, null);
                     return functionName;
                 case NEWARRAY:
                     switch ((ValueType) type) {

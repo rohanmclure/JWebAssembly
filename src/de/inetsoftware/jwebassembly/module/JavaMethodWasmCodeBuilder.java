@@ -31,7 +31,6 @@ import de.inetsoftware.classparser.MethodInfo;
 import de.inetsoftware.jwebassembly.WasmException;
 import de.inetsoftware.jwebassembly.jawa.JawaOpcodes;
 import de.inetsoftware.jwebassembly.wasm.AnyType;
-import de.inetsoftware.jwebassembly.wasm.ArrayOperator;
 import de.inetsoftware.jwebassembly.wasm.ArrayType;
 import de.inetsoftware.jwebassembly.wasm.NamedStorageType;
 import de.inetsoftware.jwebassembly.wasm.NumericOperator;
@@ -555,19 +554,19 @@ class JavaMethodWasmCodeBuilder extends WasmCodeBuilder {
                      ***********************************/
                     case 178: // getstatic
                         ConstantRef ref = (ConstantRef)constantPool.get( byteCode.readUnsignedShort() );
-                        addJawaInstruction( JawaOpcodes.JawaFuncOpcode.GETSTATIC, ref.getClassName(), new NamedStorageType(ref, getTypeManager()), codePos, lineNumber);
+                        addJawaStructInstruction( JawaOpcodes.JawaFuncOpcode.GETSTATIC, ref.getClassName(), new NamedStorageType(ref, getTypeManager()), codePos, lineNumber);
                         break;
                     case 179: // putstatic
                         ref = (ConstantRef)constantPool.get( byteCode.readUnsignedShort() );
-                        addJawaInstruction( JawaOpcodes.JawaFuncOpcode.PUTSTATIC, ref.getClassName(), new NamedStorageType(ref, getTypeManager()), codePos, lineNumber);
+                        addJawaStructInstruction( JawaOpcodes.JawaFuncOpcode.PUTSTATIC, ref.getClassName(), new NamedStorageType(ref, getTypeManager()), codePos, lineNumber);
                         break;
                     case 180: // getfield
                         ref = (ConstantRef)constantPool.get( byteCode.readUnsignedShort() );
-                        addJawaInstruction( JawaOpcodes.JawaFuncOpcode.GETFIELD, ref.getClassName(), new NamedStorageType(ref, getTypeManager()), codePos, lineNumber);
+                        addJawaStructInstruction( JawaOpcodes.JawaFuncOpcode.GETFIELD, ref.getClassName(), new NamedStorageType(ref, getTypeManager()), codePos, lineNumber);
                         break;
                     case 181: // putfield
                         ref = (ConstantRef)constantPool.get( byteCode.readUnsignedShort() );
-                        addJawaInstruction( JawaOpcodes.JawaFuncOpcode.PUTFIELD, ref.getClassName(), new NamedStorageType( ref, getTypeManager() ), codePos, lineNumber);
+                        addJawaStructInstruction( JawaOpcodes.JawaFuncOpcode.PUTFIELD, ref.getClassName(), new NamedStorageType( ref, getTypeManager() ), codePos, lineNumber);
                         break;
                     case 50: // aaload
                         storeType = findValueTypeFromStack( 2, codePos );
@@ -577,7 +576,7 @@ class JavaMethodWasmCodeBuilder extends WasmCodeBuilder {
                         storeType = findValueTypeFromStack( 1, codePos );
                         addJawaArrayInstruction(JawaOpcodes.JawaFuncOpcode.AASTORE, storeType, codePos, lineNumber);
                         break;
-                    case 165: // if_acmpeq
+                    case 165: // if_acmpeq -> If block and then acmpeq
                         opIfCompareCondition( NumericOperator.ref_eq, byteCode, codePos, lineNumber );
                         break;
                     case 166: // if_acmpne
@@ -609,7 +608,7 @@ class JavaMethodWasmCodeBuilder extends WasmCodeBuilder {
                         break;
                     case 192: // checkcast
                         name = ((ConstantClass)constantPool.get( byteCode.readUnsignedShort() )).getName();
-                        addJawaInstruction(JawaOpcodes.JawaFuncOpcode.CHECKCAST, name, null, codePos, lineNumber);
+                        addJawaStructInstruction(JawaOpcodes.JawaFuncOpcode.CHECKCAST, name, null, codePos, lineNumber);
                         break;
                     case 49: // daload
                         addJawaArrayInstruction(JawaOpcodes.JawaFuncOpcode.DALOAD, ValueType.f64, codePos, lineNumber);
@@ -688,7 +687,7 @@ class JavaMethodWasmCodeBuilder extends WasmCodeBuilder {
                         //TODO break;
                     case 187: // new
                         name = ((ConstantClass)constantPool.get( byteCode.readUnsignedShort() )).getName();
-                        addJawaInstruction(JawaOpcodes.JawaFuncOpcode.NEW, name, null, codePos, lineNumber);
+                        addJawaStructInstruction(JawaOpcodes.JawaFuncOpcode.NEW, name, null, codePos, lineNumber);
                         break;
                     case 188: // newarray
                         int typeValue = byteCode.readByte();
@@ -724,7 +723,7 @@ class JavaMethodWasmCodeBuilder extends WasmCodeBuilder {
                         break;
                     case 193: // instanceof
                         name = ((ConstantClass)constantPool.get( byteCode.readUnsignedShort() )).getName();
-                        addJawaInstruction(JawaOpcodes.JawaFuncOpcode.INSTANCEOF, name, new NamedStorageType(findValueTypeFromStack(1, codePos), "", ""), codePos, lineNumber);
+                        addJawaStructInstruction(JawaOpcodes.JawaFuncOpcode.INSTANCEOF, name, new NamedStorageType(findValueTypeFromStack(1, codePos), "", ""), codePos, lineNumber);
                         break;
                     case 194: // monitorenter //todo monitorexit
                         addBlockInstruction( WasmBlockOperator.MONITOR_ENTER, null, codePos, lineNumber );

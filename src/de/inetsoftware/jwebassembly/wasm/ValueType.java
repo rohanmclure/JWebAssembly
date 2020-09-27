@@ -41,7 +41,7 @@ public enum ValueType implements AnyType {
     struct(-0x21),
     array(-0x22),
     empty(-0x40), // empty/void block_type
-    abstractref(-0x21),
+    abstractref(-0x26),
     ;
 
     private final int code;
