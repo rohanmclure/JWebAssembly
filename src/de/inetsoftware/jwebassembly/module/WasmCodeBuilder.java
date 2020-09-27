@@ -559,48 +559,47 @@ public abstract class WasmCodeBuilder {
         boolean needThisParameter = functions.needThisParameter( name );
         WasmCallInstruction instruction = new WasmCallInstruction( name, javaCodePos, lineNumber, types, needThisParameter );
 
-        if( "<init>".equals( name.methodName ) ) {
-            // check if there a factory for the constructor in JavaScript then we need to do some more complex patching
-            Function<String, Object> importAnannotation = functions.getImportAnannotation( name );
-            FunctionName factoryName = null;
-            if( importAnannotation != null ) { // JavaScript replacement for a constructor via import
-                // The new signature need a return value. The <init> of Java has ever a void return value
-                String signature = name.signature;
-                signature = signature.substring( 0, signature.length() - 1 ) + "Ljava/lang/Object;";
-                factoryName = new ImportSyntheticFunctionName( "String", "init", signature, importAnannotation );
-            } else {
-                MethodInfo replace = functions.replace( name, null );
-                if( replace != null && !"<init>".equals( replace.getName() ) ) {
-                    // the constructor was replaced with a factory method. Typical this method called then a JavaScript replacement
-                    factoryName = new FunctionName( replace );
-                    if (factoryName.methodName.equals("string_init")) {
-                        factoryName = null;
-                    }
-                }
-            }
-
-            if( factoryName != null ) {
-                // the constructor was replaced we need also replace the create instance instruction
-                List<WasmInstruction> instructions = this.instructions;
-                for( int i = instructions.size() - 1; i >= 0; i-- ) {
-                    WasmInstruction instr = instructions.get( i );
-                    if( instr.getType() == Type.Struct ) {
-                        WasmStructInstruction struct = (WasmStructInstruction)instr;
-                        if( struct.getOperator() == StructOperator.NEW_DEFAULT ) {
-                            instructions.set( i, new WasmNopInstruction( struct.getCodePosition(), struct.getLineNumber() ) ); // replace NEW_DEFAULT with Nop, Nop because the code position can be needed for the branch manager
-                            instr = instructions.get( ++i );
-//                            if( instr.getType() == Type.Dup ) {
-//                                instructions.remove( i ); // dup of the instance reference if it is later assign, missing if the object after the constructor is never assign
-//                            }
-                            break;
-                        }
-                    }
-                }
-                // the new instruction
-                instruction = new WasmCallInstruction( factoryName, javaCodePos, lineNumber, types, false );
-            }
-        }
-
+//        if( "<init>".equals( name.methodName ) ) {
+//            // check if there a factory for the constructor in JavaScript then we need to do some more complex patching
+//            Function<String, Object> importAnannotation = functions.getImportAnannotation( name );
+//            FunctionName factoryName = null;
+//            if( importAnannotation != null ) { // JavaScript replacement for a constructor via import
+//                // The new signature need a return value. The <init> of Java has ever a void return value
+//                String signature = name.signature;
+//                signature = signature.substring( 0, signature.length() - 1 ) + "Ljava/lang/Object;";
+//                factoryName = new ImportSyntheticFunctionName( "String", "init", signature, importAnannotation );
+//            } else {
+//                MethodInfo replace = functions.replace( name, null );
+//                if( replace != null && !"<init>".equals( replace.getName() ) ) {
+//                    // the constructor was replaced with a factory method. Typical this method called then a JavaScript replacement
+//                    factoryName = new FunctionName( replace );
+//                    if (factoryName.methodName.equals("string_init")) {
+//                        factoryName = null;
+//                    }
+//                }
+//            }
+//
+//            if( factoryName != null ) {
+//                // the constructor was replaced we need also replace the create instance instruction
+//                List<WasmInstruction> instructions = this.instructions;
+//                for( int i = instructions.size() - 1; i >= 0; i-- ) {
+//                    WasmInstruction instr = instructions.get( i );
+//                    if( instr.getType() == Type.Struct ) {
+//                        WasmStructInstruction struct = (WasmStructInstruction)instr;
+//                        if( struct.getOperator() == StructOperator.NEW_DEFAULT ) {
+//                            instructions.set( i, new WasmNopInstruction( struct.getCodePosition(), struct.getLineNumber() ) ); // replace NEW_DEFAULT with Nop, Nop because the code position can be needed for the branch manager
+//                            instr = instructions.get( ++i );
+////                            if( instr.getType() == Type.Dup ) {
+////                                instructions.remove( i ); // dup of the instance reference if it is later assign, missing if the object after the constructor is never assign
+////                            }
+//                            break;
+//                        }
+//                    }
+//                }
+//                // the new instruction
+//                instruction = new WasmCallInstruction( factoryName, javaCodePos, lineNumber, types, false );
+//            }
+//        }
         instructions.add( instruction );
         functions.markClassAsUsed( name.className );
     }
@@ -838,8 +837,13 @@ public abstract class WasmCodeBuilder {
      * @param lineNumber the line number in the Java source code
      */
     protected void addJawaCallInstruction (JawaOpcodes.JawaFuncOpcode op, @Nonnull String typeName, @Nonnull FunctionName fName, @Nonnull NamedStorageType fieldName, int javaCodePos, int lineNumber ) {
+        // Currently jawa doesn't have <init>
+        if( "<init>".equals( fName.methodName ) && fName.className.contains("java/lang")) {
+                addCallInstruction(fName, javaCodePos, lineNumber);
+                return;
+        }
+
         fName = functions.markAsNeeded( fName );
-        functions.markClassAsUsed( fName.className );
         boolean needThisParameter = functions.needThisParameter( fName );
         WasmJawaCallInstruction jawaInstruction = new WasmJawaCallInstruction( op, typeName, fName, needThisParameter, javaCodePos, lineNumber, types );
         instructions.add( jawaInstruction );
@@ -848,6 +852,7 @@ public abstract class WasmCodeBuilder {
             functions.markAsNeeded( name );
             functions.markAsImport(name, name.getAnnotation());
         }
+        functions.markClassAsUsed( fName.className );
     }
 
     /**

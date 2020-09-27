@@ -65,7 +65,7 @@ public class JavaScriptWriter {
         }
 
         Function<String, Object> old = moduleEntries.put( name, annotationValues );
-        if( old != null ) {
+        if( old != null && !module.equals("jawa")) {
             System.err.println( "Redefine JavaScript function: " + module + "." + name );
         }
     }

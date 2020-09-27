@@ -55,13 +55,13 @@ public class FunctionName {
      * The Java signature which is used in Java byte code to reference the method call. For example: "java/lang/String.hashCode()I"
      */
     @Nonnull
-    public final String signatureName;
+    public String signatureName;
 
     /**
      * The signature part. For example: "()I"
      */
     @Nonnull
-    public final String signature;
+    public String signature;
 
     /**
      * Create a new instance from the given reference in the ConstantPool or parsed method.

@@ -30,6 +30,7 @@ import de.inetsoftware.classparser.ConstantRef;
 import de.inetsoftware.classparser.MethodInfo;
 import de.inetsoftware.jwebassembly.WasmException;
 import de.inetsoftware.jwebassembly.jawa.JawaOpcodes;
+import de.inetsoftware.jwebassembly.jawa.JawaSignature;
 import de.inetsoftware.jwebassembly.wasm.AnyType;
 import de.inetsoftware.jwebassembly.wasm.ArrayType;
 import de.inetsoftware.jwebassembly.wasm.NamedStorageType;
@@ -37,6 +38,7 @@ import de.inetsoftware.jwebassembly.wasm.NumericOperator;
 import de.inetsoftware.jwebassembly.wasm.StructOperator;
 import de.inetsoftware.jwebassembly.wasm.ValueType;
 import de.inetsoftware.jwebassembly.wasm.WasmBlockOperator;
+import org.omg.CORBA.Any;
 
 /**
  * Convert Java Byte Code to a list of WasmInstruction.
@@ -577,14 +579,16 @@ class JavaMethodWasmCodeBuilder extends WasmCodeBuilder {
                         addJawaArrayInstruction(JawaOpcodes.JawaFuncOpcode.AASTORE, storeType, codePos, lineNumber);
                         break;
                     case 165: // if_acmpeq -> If block and then acmpeq
-                        opIfCompareCondition( NumericOperator.ref_eq, byteCode, codePos, lineNumber );
-                        break;
+
+//                        opIfCompareCondition( NumericOperator.ref_eq, byteCode, codePos, lineNumber );
+//                        break;
                     case 166: // if_acmpne
-                        opIfCompareCondition( NumericOperator.ref_ne, byteCode, codePos, lineNumber );
-                        break;
+                        throw new Exception("Cannot handle ACMPEQ yet");
+//                        opIfCompareCondition( NumericOperator.ref_ne, byteCode, codePos, lineNumber );
+//                        break;
                     case 189: // anewarray
                         String name = ((ConstantClass)constantPool.get( byteCode.readUnsignedShort() )).getName();
-                        type = getTypeManager().valueOf(name);
+                        type = getTypeManager().valueOfSig(name);
                         addJawaArrayInstruction( JawaOpcodes.JawaFuncOpcode.ANEWARRAY, type, codePos, lineNumber );
                         break;
                     case 190: // arraylength
@@ -647,10 +651,10 @@ class JavaMethodWasmCodeBuilder extends WasmCodeBuilder {
                         addJawaCallInstruction(JawaOpcodes.JawaFuncOpcode.INVOKEVIRTUAL, fName.className, fName, null, codePos, lineNumber);
                         break;
                     case 183: // invokespecial, invoke a constructor
-//                        ref = (ConstantRef)constantPool.get( byteCode.readUnsignedShort() );
-//                        fName = new FunctionName( ref);
-//                        addJawaCallInstruction(JawaOpcodes.JawaFuncOpcode.INVOKESPECIAL, fName.className, fName, null, codePos, lineNumber);
-//                        break;
+                        ref = (ConstantRef)constantPool.get( byteCode.readUnsignedShort() );
+                        fName = new FunctionName( ref);
+                        addJawaCallInstruction(JawaOpcodes.JawaFuncOpcode.INVOKESPECIAL, fName.className, fName, null, codePos, lineNumber);
+                        break;
                     case 184: // invokestatic
 //                        ref = (ConstantRef)constantPool.get( byteCode.readUnsignedShort() );
 //                        fName = new FunctionName( ref );
@@ -726,16 +730,17 @@ class JavaMethodWasmCodeBuilder extends WasmCodeBuilder {
                         addJawaStructInstruction(JawaOpcodes.JawaFuncOpcode.INSTANCEOF, name, new NamedStorageType(findValueTypeFromStack(1, codePos), "", ""), codePos, lineNumber);
                         break;
                     case 194: // monitorenter //todo monitorexit
-                        addBlockInstruction( WasmBlockOperator.MONITOR_ENTER, null, codePos, lineNumber );
-                        break;
+//                        addBlockInstruction( WasmBlockOperator.MONITOR_ENTER, null, codePos, lineNumber );
+//                        break;
                     case 195: // monitorexit //todo monitorexit
-                        addBlockInstruction( WasmBlockOperator.MONITOR_EXIT, null, codePos, lineNumber );
-                        break;
+//                        addBlockInstruction( WasmBlockOperator.MONITOR_EXIT, null, codePos, lineNumber );
+//                        break;
                     case 197: // multianewarray //todo multianewarray
-                        name = ((ConstantClass)constantPool.get( byteCode.readUnsignedShort() )).getName();
-                        idx = byteCode.readUnsignedByte();
-                        addMultiNewArrayInstruction( idx, name, codePos, lineNumber );
-                        break;
+
+//                        name = ((ConstantClass)constantPool.get( byteCode.readUnsignedShort() )).getName();
+//                        idx = byteCode.readUnsignedByte();
+//                        addMultiNewArrayInstruction( idx, name, codePos, lineNumber );
+//                        break;
                     default:
                         throw new WasmException( "Unimplemented Java byte code operation: " + op, lineNumber );
                 }
@@ -898,6 +903,12 @@ class JavaMethodWasmCodeBuilder extends WasmCodeBuilder {
         WasmNumericInstruction compare = addNumericInstruction( compareOp, ValueType.i32, codePos, lineNumber );
         branchManager.addIfOperator( codePos, offset, byteCode.getLineNumber(), compare );
     }
+
+//    private void opIfJawaCompareCondition(JawaOpcodes.JawaFuncOpcode compareOp, CodeInputStream byteCode, int codePos, int lineNumber ) throws IOException {
+//        int offset = byteCode.readShort();
+//        WasmJawaCompareInstruction compare = addJawaCompareInstruction( compareOp, ValueType.i32, codePos, lineNumber );
+//        branchManager.addIfOperator( codePos, offset, byteCode.getLineNumber(), compare );
+//    }
 
     /**
      * Handle the different compare operator. The compare operator returns the integer values -1, 0 or 1. There is no

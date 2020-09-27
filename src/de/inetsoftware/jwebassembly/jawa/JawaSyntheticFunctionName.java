@@ -47,6 +47,22 @@ public class JawaSyntheticFunctionName extends ArraySyntheticFunctionName {
      */
     public JawaSyntheticFunctionName( AnyType arg, String module, String functionName, TypeManager.StructType type, AnyType... signature ) {
         super( module, functionName, signature );
+
+        StringBuilder sigName = new StringBuilder("(");
+        for (AnyType t : signature) {
+            if (t == null) {
+                sigName.append(')');
+                continue;
+            }
+            sigName.append(t.toString());
+        }
+        if (arg != null) {
+            sigName.append('[');
+            sigName.append(arg.toString());
+            sigName.append(']');
+        }
+        this.signature = sigName.toString();
+        this.signatureName = this.fullName + this.signature;
         this.arg = arg;
     }
 

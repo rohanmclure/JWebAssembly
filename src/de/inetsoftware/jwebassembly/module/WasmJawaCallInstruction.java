@@ -23,9 +23,6 @@ import de.inetsoftware.jwebassembly.jawa.JawaSyntheticFunctionName;
 import de.inetsoftware.jwebassembly.jawa.StringWriter;
 import de.inetsoftware.jwebassembly.module.TypeManager.StructType;
 import de.inetsoftware.jwebassembly.wasm.AnyType;
-import de.inetsoftware.jwebassembly.wasm.NamedStorageType;
-import de.inetsoftware.jwebassembly.wasm.ValueType;
-import org.omg.CORBA.Any;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -62,8 +59,6 @@ class WasmJawaCallInstruction extends WasmInstruction {
      *            the struct operation
      * @param typeName
      *            the type name of the parameters
-     * @param fieldName
-     *            the name of field if needed for the operation
      * @param javaCodePos
      *            the code position/offset in the Java method
      * @param lineNumber
@@ -132,50 +127,16 @@ class WasmJawaCallInstruction extends WasmInstruction {
      * {@inheritDoc}
      */
     public void writeTo( @Nonnull ModuleWriter writer ) throws IOException {
-//        if( type != null && fieldName != null ) {
-//            // The fieldName of the struct operation does not contain the class name in which the field was declared. It contains the class name of the variable. This can be the class or a subclass.
-//            List<NamedStorageType> fields = type.getFields();
-//            boolean classNameMatched = type.getName().equals( fieldName.geClassName() );
-//            for( int i = fields.size()-1; i >= 0; i-- ) {
-//                NamedStorageType field = fields.get( i );
-//                if( !classNameMatched && field.geClassName().equals( fieldName.geClassName() ) ) {
-//                    classNameMatched = true;
-//                }
-//                if( classNameMatched && field.getName().equals( fieldName.getName() ) ) {
-//                    idx = i;
-//                    break;
-//                }
-//            }
-//            if( !classNameMatched ) {
-//                // special case, the type self does not add a needed field, that we search in all fields
-//                for( int i = fields.size()-1; i >= 0; i-- ) {
-//                    NamedStorageType field = fields.get( i );
-//                    if( field.getName().equals( fieldName.getName() ) ) {
-//                        idx = i;
-//                        break;
-//                    }
-//                }
-//            }
-//        }
+
         if (functionName != null) {
             writer.writeFunctionCall( functionName, null );
         }
-//        if( functionName != null ) { // nonGC
-//            if( fieldName != null ) {
-//                writer.writeConst( idx, ValueType.i32 );
-//            }
-//            writer.writeFunctionCall( functionName, null );
-//        } else {
-//            writer.writeStructOperator( op, type, fieldName, idx );
-//        }
+
     }
 
     @Override
     AnyType getPushValueType() {
         switch ( op ) {
-            case NEW:
-            case NEWARRAY:
-                return type;
             case INVOKEVIRTUAL:
             case INVOKESTATIC:
             case INVOKESPECIAL:
@@ -191,7 +152,6 @@ class WasmJawaCallInstruction extends WasmInstruction {
         switch ( op ) {
             case INVOKEVIRTUAL:
             case INVOKESPECIAL:
-//                return sig.params().size() + 1;
             case INVOKESTATIC:
                 return sig.params().size() + (needThisParam ? 1 : 0);
             case SYSCALL: // todo need to think of a better way to do this :(

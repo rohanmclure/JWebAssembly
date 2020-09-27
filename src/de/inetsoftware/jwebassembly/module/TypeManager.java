@@ -308,6 +308,39 @@ public class TypeManager {
     }
 
     /**
+     * Converts a signature name into a type
+     * @param sig
+     * @return
+     */
+    public AnyType valueOfSig( String sig ) {
+        switch (sig.toCharArray()[0]) {
+            case 'Z': // boolean
+                return ValueType.bool;
+            case 'B': // byte
+            case 'C': // char
+                return ValueType.i8;
+            case 'S': // short
+                return ValueType.i16;
+            case 'I': // int
+                return ValueType.i32;
+            case 'D': // double
+                return ValueType.f64;
+            case 'F': // float
+                return ValueType.f32;
+            case 'J': // long
+                return ValueType.i64;
+            case 'V': // void
+                return null;
+            case 'L':
+                return this.valueOf(sig.substring(1, sig.length() - 1));
+            case '[':
+                return this.arrayType(this.valueOfSig(sig.substring(1)));
+            default:
+                throw new WasmException("Invalid signature passed", -1);
+        }
+    }
+
+    /**
      * Get the array type for the given component type.
      * 
      * @param arrayType
@@ -592,7 +625,7 @@ public class TypeManager {
             instanceOFs = new LinkedHashSet<>(); // remembers the order from bottom to top class.
             instanceOFs.add( this );
             interfaceMethods = new LinkedHashMap<>();
-            if( classIndex < PRIMITIVE_CLASSES.length ) {
+            if( classIndex < PRIMITIVE_CLASSES.length || (this instanceof ArrayType && ((ArrayType) this).getArrayType() instanceof ValueType) ) {
                 // nothing
             } else if( this instanceof ArrayType ) {
                 HashSet<String> allNeededFields = new HashSet<>();
