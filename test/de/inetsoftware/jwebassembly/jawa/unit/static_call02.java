@@ -5,7 +5,7 @@ import de.inetsoftware.jwebassembly.jawa.RunTest;
 
 import static de.inetsoftware.jwebassembly.jawa.Print.puti;
 
-@RunTest(input="",intInput=1,output="45")
+@RunTest(input = "", intInput = 1, output = "45")
 public class static_call02 {
     static int m1(int a) {
         static_call02.m2();

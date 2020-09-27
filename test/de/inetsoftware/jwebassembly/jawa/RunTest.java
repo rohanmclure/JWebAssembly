@@ -26,9 +26,11 @@ import java.lang.annotation.*;
 @Repeatable(RunTests.class)
 public @interface RunTest {
 
-    String input();
+    String input() default "";
 
-    String output();
+    String output() default "";
+
+    String exception() default "";
 
     int intInput() default -1;
 

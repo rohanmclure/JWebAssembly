@@ -10,7 +10,7 @@ import static de.inetsoftware.jwebassembly.jawa.Print.puti;
 public class aiobe00 {
     static int m(int x) {
         int[] y = new int[x];
-        return y[x-1];
+        return y[x - 1];
     }
 
     @Export

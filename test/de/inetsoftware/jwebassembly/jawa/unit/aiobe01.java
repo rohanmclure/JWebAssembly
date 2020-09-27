@@ -9,13 +9,13 @@ import static de.inetsoftware.jwebassembly.jawa.Print.puti;
 @RunTest(input = "1 2", output = "!ArrayIndexOutOfBoundsException")
 public class aiobe01 {
     static int m(int x) {
-		int[] y = new int[1];
-		y[0] = 5;
-		return y[x];
+        int[] y = new int[1];
+        y[0] = 5;
+        return y[x];
     }
 
     @Export
-	public static void main(String[] args) {
-		puti(m(args.length));
-	}
+    public static void main(String[] args) {
+        puti(m(args.length));
+    }
 }

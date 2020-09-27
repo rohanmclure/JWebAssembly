@@ -5,7 +5,6 @@ import de.inetsoftware.jwebassembly.jawa.RunTest;
 
 import static de.inetsoftware.jwebassembly.jawa.Print.puts;
 
-@RunTest(input="",intInput=0,output="0")
 @RunTest(input = "", output = "false")
 public class null01 {
     static boolean m(int a) {

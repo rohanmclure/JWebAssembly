@@ -6,8 +6,8 @@ import de.inetsoftware.jwebassembly.jawa.RunTest;
 import static de.inetsoftware.jwebassembly.jawa.Print.puti;
 import static de.inetsoftware.jwebassembly.jawa.Print.puts;
 
-@RunTest(input="",intInput=4,output="false")
-@RunTest(input="",intInput=127,output="true")
+@RunTest(input = "", intInput = 4, output = "false")
+@RunTest(input = "", intInput = 127, output = "true")
 public class array03 {
     static boolean m(int x) {
         boolean[] y = new boolean[x];

@@ -10,7 +10,7 @@ import static de.inetsoftware.jwebassembly.jawa.Print.puti;
 @RunTest(input = "a b c", output = "4")
 public class add02 {
     static int run(int a) {
-	return add02.foo(a);
+        return add02.foo(a);
     }
 
     static int foo(int a) {

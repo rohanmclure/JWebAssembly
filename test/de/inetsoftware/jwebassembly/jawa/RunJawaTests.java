@@ -16,21 +16,11 @@
  */
 package de.inetsoftware.jwebassembly.jawa;
 
-import de.inetsoftware.jwebassembly.JWebAssembly;
 import de.inetsoftware.jwebassembly.jawa.unit.*;
-import org.junit.Assert;
 import org.junit.Test;
-
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
-import java.net.URL;
+import static de.inetsoftware.jwebassembly.jawa.TestRunner.run;
 
 public class RunJawaTests {
-
-    private final static boolean DEBUG = true;
-    private final static String OUT_DIR = "build\\code";
-    private final static String JAWA_DIR = "java -jar ..\\wizard-engine\\bin\\jawa.jar";
 
     @Test
     public void add01() { run( add01.class ); }
@@ -123,6 +113,39 @@ public class RunJawaTests {
     public void arraylength00() { run( arraylength00.class ); }
 
     @Test
+    public void array_copy01() { run( array_copy01.class ); }
+
+    @Test
+    public void callstatic() { run( callstatic.class ); }
+
+    @Test
+    public void char00() { run( char00.class ); }
+
+    @Test
+    public void div01() { run( div01.class ); }
+
+    @Test
+    public void divzero01() { run( divzero01.class ); }
+
+    @Test
+    public void eq00() { run( eq00.class ); }
+
+    @Test
+    public void eq01() { run( eq01.class ); }
+
+    @Test
+    public void eq02() { run( eq02.class ); }
+
+    @Test
+    public void eq03() { run( eq03.class ); }
+
+    @Test
+    public void false00() { run( false00.class ); }
+
+    @Test
+    public void fieldstatic() { run( fieldstatic.class ); }
+
+    @Test
     public void for00() { run( for00.class ); }
 
     @Test
@@ -133,6 +156,69 @@ public class RunJawaTests {
 
     @Test
     public void for03() { run( for03.class ); }
+
+    @Test
+    public void for04() { run( for04.class ); }
+
+    @Test
+    public void for05() { run( for05.class ); }
+
+    @Test
+    public void for06() { run( for06.class ); }
+
+    @Test
+    public void for07() { run( for07.class ); }
+
+    @Test
+    public void for08() { run( for08.class ); }
+
+    @Test
+    public void for09() { run( for09.class ); }
+
+    @Test
+    public void for10() { run( for10.class ); }
+
+    @Test
+    public void for11() { run( for11.class ); }
+
+    @Test
+    public void for12() { run( for12.class ); }
+
+    @Test
+    public void for13() { run( for13.class ); }
+
+    @Test
+    public void for14() { run( for14.class ); }
+
+    @Test
+    public void for15() { run( for15.class ); }
+
+    @Test
+    public void gt00() { run( gt00.class ); }
+
+    @Test
+    public void gt01() { run( gt01.class ); }
+
+    @Test
+    public void gt02() { run( gt02.class ); }
+
+    @Test
+    public void gteq00() { run( gteq00.class ); }
+
+    @Test
+    public void gteq01() { run( gteq01.class ); }
+
+    @Test
+    public void gteq02() { run( gteq02.class ); }
+
+    @Test
+    public void if01() { run( if01.class ); }
+
+    @Test
+    public void if02() { run( if02.class ); }
+
+    @Test
+    public void if03() { run( if03.class ); }
 
     @Test
     public void instance_field01() { run( instance_field01.class ); }
@@ -165,6 +251,54 @@ public class RunJawaTests {
     public void instance_meth02() { run( instance_meth02.class ); }
 
     @Test
+    public void int00() { run( int00.class ); }
+
+    @Test
+    public void lt00() { run( lt00.class ); }
+
+    @Test
+    public void lt01() { run( lt01.class ); }
+
+    @Test
+    public void lt02() { run( lt02.class ); }
+
+    @Test
+    public void lteq00() { run( lteq00.class ); }
+
+    @Test
+    public void lteq01() { run( lteq01.class ); }
+
+    @Test
+    public void lteq02() { run( lteq02.class ); }
+
+    @Test
+    public void mul01() { run( mul01.class ); }
+
+    @Test
+    public void ne00() { run( ne00.class ); }
+
+    @Test
+    public void ne01() { run( ne01.class ); }
+
+    @Test
+    public void ne02() { run( ne02.class ); }
+
+    @Test
+    public void ne03() { run( ne03.class ); }
+
+    @Test
+    public void new_array01() { run( new_array01.class ); }
+
+    @Test
+    public void npe01() { run( npe01.class ); }
+
+    @Test
+    public void npe02() { run( npe02.class ); }
+
+    @Test
+    public void npe03() { run( npe03.class ); }
+
+    @Test
     public void null00() { run( null00.class ); }
 
     @Test
@@ -172,6 +306,42 @@ public class RunJawaTests {
 
     @Test
     public void null02() { run( null02.class ); }
+
+    @Test
+    public void oror00() { run( oror00.class ); }
+
+    @Test
+    public void oror01() { run( oror01.class ); }
+
+    @Test
+    public void oror02() { run( oror02.class ); }
+
+    @Test
+    public void oror03() { run( oror03.class ); }
+
+    @Test
+    public void oror04() { run( oror04.class ); }
+
+    @Test
+    public void ret01() { run( ret01.class ); }
+
+    @Test
+    public void ret02() { run( ret02.class ); }
+
+    @Test
+    public void ret03() { run( ret03.class ); }
+
+    @Test
+    public void ret04() { run( ret04.class ); }
+
+    @Test
+    public void ret05() { run( ret05.class ); }
+
+    @Test
+    public void ret06() { run( ret06.class ); }
+
+    @Test
+    public void return00() { run( return00.class ); }
 
     @Test
     public void static_call01() { run( static_call01.class ); }
@@ -198,7 +368,49 @@ public class RunJawaTests {
     public void static_field05() { run( static_field05.class ); }
 
     @Test
+    public void str00() { run( str00.class ); }
+
+    @Test
+    public void sub01() { run( sub01.class ); }
+
+    @Test
+    public void super01() { run( super01.class ); }
+
+    @Test
+    public void super02() { run( super02.class ); }
+
+    @Test
+    public void super_meth00() { run( super_meth00.class ); }
+
+    @Test
+    public void super_meth01() { run( super_meth01.class ); }
+
+    @Test
     public void syscall01() { run( syscall01.class ); }
+
+    @Test
+    public void this00() { run( this00.class ); }
+
+    @Test
+    public void true00() { run( true00.class ); }
+
+    @Test
+    public void var00() { run( var00.class ); }
+
+    @Test
+    public void var01() { run( var01.class ); }
+
+    @Test
+    public void var02() { run( var02.class ); }
+
+    @Test
+    public void var03() { run( var03.class ); }
+
+    @Test
+    public void var04() { run( var04.class ); }
+
+    @Test
+    public void var05() { run( var05.class ); }
 
     @Test
     public void virtual00() { run( virtual00.class ); }
@@ -233,62 +445,57 @@ public class RunJawaTests {
     @Test
     public void virtual10() { run( virtual10.class ); }
 
+    @Test
+    public void while00() { run( while00.class ); }
 
-    public void run(Class<?> clazz) {
-        // Setup compiler
-        JWebAssembly compiler = new JWebAssembly();
-        URL url = clazz.getResource( '/' + clazz.getName().replace( '.', '/' ) + ".class" );
-        compiler.addFile(url);
-        final String[] libraries = System.getProperty("java.class.path").split(File.pathSeparator);
-        for( String lib : libraries ) {
-            if( lib.endsWith( ".jar" ) || lib.toLowerCase().contains( "jwebassembly-api" ) ) {
-                compiler.addLibrary( new File(lib) );
-            }
-        }
+    @Test
+    public void while01() { run( while01.class ); }
 
-        // Output WAT / WASM
-        if (DEBUG) {
-            File text = new File(OUT_DIR, clazz.getSimpleName() + ".wat");
-            compiler.compileToText(text);
-        }
-        File binary = new File(OUT_DIR, clazz.getSimpleName() + ".wasm");
-        compiler.compileToBinary(binary);
+    @Test
+    public void while02() { run( while02.class ); }
 
-        // Get all unit tests to run
-        if (clazz.getAnnotation(RunTests.class) != null) {
-            for (RunTest test : clazz.getAnnotation(RunTests.class).value()) {
-                RunTestCase(test, binary);
-            }
-        } else {
-            RunTest test = clazz.getAnnotation(RunTest.class);
-            if (test == null) Assert.fail("No test cases defined for class");
-            RunTestCase(test, binary);
-        }
-    }
+    @Test
+    public void while03() { run( while03.class ); }
 
-    void RunTestCase(RunTest test, File binary) {
-        try {
-            String input = test.input();
-            if (test.intInput() >= 0) {
-                StringBuilder intInputBuilder = new StringBuilder();
-                for (int i = 1; i < test.intInput(); i++) {
-                    intInputBuilder.append(i);
-                    intInputBuilder.append(' ');
-                }
-                if (test.intInput() != 0) intInputBuilder.append(test.intInput());
-                input = intInputBuilder.toString();
-            }
+    @Test
+    public void while04() { run( while04.class ); }
 
-            Process proc = Runtime.getRuntime().exec(JAWA_DIR + " " + binary.getCanonicalPath() + " " + input);
-            proc.waitFor();
-            InputStream in = proc.getInputStream();
-            byte b[] = new byte[in.available()];
-            in.read(b, 0, b.length);
-            String output = new String(b);
-            Assert.assertEquals("Ran input \"" + input + "\"", test.output(), output);
-        } catch (IOException | InterruptedException e) {
-            e.printStackTrace();
-        }
-    }
+    @Test
+    public void while05() { run( while05.class ); }
+
+    @Test
+    public void xc_array01() { run( xc_array01.class ); }
+
+    @Test
+    public void xc_array02() { run( xc_array02.class ); }
+
+    @Test
+    public void xc_array03() { run( xc_array03.class ); }
+
+    @Test
+    public void xc_break01() { run( xc_break01.class ); }
+
+    @Test
+    public void xc_break02() { run( xc_break02.class ); }
+
+    @Test
+    public void xc_break03() { run( xc_break03.class ); }
+
+    @Test
+    public void xc_break04() { run( xc_break04.class ); }
+
+    @Test
+    public void xc_cont01() { run( xc_cont01.class ); }
+
+    @Test
+    public void xc_cont02() { run( xc_cont02.class ); }
+
+    @Test
+    public void xc_cont03() { run( xc_cont03.class ); }
+
+    @Test
+    public void xc_superfield00() { run( xc_superfield00.class ); }
+
+
 
 }

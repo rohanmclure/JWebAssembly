@@ -5,8 +5,8 @@ import de.inetsoftware.jwebassembly.jawa.RunTest;
 
 import static de.inetsoftware.jwebassembly.jawa.Print.puti;
 
-@RunTest(input="",intInput=9,output="9")
-@RunTest(input="",intInput=120,output="120")
+@RunTest(input = "", intInput = 9, output = "9")
+@RunTest(input = "", intInput = 120, output = "120")
 public class array02 {
     static int m(int x) {
         int[] y = new int[x];

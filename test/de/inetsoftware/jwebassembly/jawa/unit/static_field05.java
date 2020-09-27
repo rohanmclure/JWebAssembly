@@ -5,8 +5,8 @@ import de.inetsoftware.jwebassembly.jawa.RunTest;
 
 import static de.inetsoftware.jwebassembly.jawa.Print.puti;
 
-@RunTest(input="", output = "-9")
-@RunTest(input="",intInput=123,output="123")
+@RunTest(input = "", output = "-9")
+@RunTest(input = "", intInput = 123, output = "123")
 public class static_field05 {
     static int[] a;
     static boolean f;

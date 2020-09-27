@@ -5,8 +5,8 @@ import de.inetsoftware.jwebassembly.jawa.RunTest;
 
 import static de.inetsoftware.jwebassembly.jawa.Print.puti;
 
-@RunTest(input="",intInput=9,output="9")
-@RunTest(input="",intInput=100,output="100")
+@RunTest(input = "", intInput = 9, output = "9")
+@RunTest(input = "", intInput = 100, output = "100")
 public class static_field01 {
     static int f;
 

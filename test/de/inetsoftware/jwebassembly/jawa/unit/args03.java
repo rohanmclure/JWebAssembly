@@ -22,6 +22,7 @@ public class args03 {
         if (w == 3) return d;
         return 33;
     }
+
     @Export
     public static void main(String[] args) {
         puti(p(args.length));

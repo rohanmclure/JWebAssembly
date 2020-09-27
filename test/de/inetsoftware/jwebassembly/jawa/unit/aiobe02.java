@@ -11,7 +11,7 @@ import static de.inetsoftware.jwebassembly.jawa.Print.puti;
 public class aiobe02 {
     static int m(int x) {
         int[] y = new int[x];
-    	return y[x];
+        return y[x];
     }
 
     @Export

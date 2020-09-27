@@ -5,9 +5,9 @@ import de.inetsoftware.jwebassembly.jawa.RunTest;
 
 import static de.inetsoftware.jwebassembly.jawa.Print.puts;
 
-@RunTest(input="",intInput=0,output="true")
-@RunTest(input="",intInput=1,output="false")
-@RunTest(input="",intInput=2,output="true")
+@RunTest(input = "", intInput = 0, output = "true")
+@RunTest(input = "", intInput = 1, output = "false")
+@RunTest(input = "", intInput = 2, output = "true")
 public class array06 {
     static boolean m(int i) {
         int[] x = new int[3];

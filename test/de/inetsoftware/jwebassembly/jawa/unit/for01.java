@@ -5,7 +5,7 @@ import de.inetsoftware.jwebassembly.jawa.RunTest;
 
 import static de.inetsoftware.jwebassembly.jawa.Print.puti;
 
-@RunTest(input="",intInput=1,output="0")
+@RunTest(input = "", intInput = 1, output = "0")
 @RunTest(input = "1", output = "0")
 public class for01 {
     static int foo(int a) {

@@ -8,7 +8,7 @@ import static de.inetsoftware.jwebassembly.jawa.Print.puts;
 @RunTest(input = "", output = "false")
 public class andand02 {
     static boolean m(int a) {
-	    return false && true;
+        return false && true;
     }
 
     @Export
