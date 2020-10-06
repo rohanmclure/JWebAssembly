@@ -14,8 +14,10 @@ import java.net.URL;
 public class TestRunner {
 
     private final static boolean DEBUG = true;
-    private final static String OUT_DIR = "build\\code";
-    private final static String JAWA_DIR = "java -jar ..\\wizard-engine\\bin\\jawa.jar";
+    private final static boolean isWindows = System.getProperty("os.name").toLowerCase().contains("win");
+    private final static String SEPARATOR = isWindows ? "\\" : "/";
+    private final static String OUT_DIR = "build" + SEPARATOR + "code";
+    private final static String JAWA_DIR = "java -jar .." + SEPARATOR + "wizard-engine" + SEPARATOR + "bin" + SEPARATOR + "jawa.jar";
 
     public static void run(Class<?> clazz) {
         // Setup compiler
