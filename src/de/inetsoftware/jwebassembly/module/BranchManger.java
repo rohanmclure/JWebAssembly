@@ -131,6 +131,11 @@ class BranchManger {
         allParsedOperations.add( new IfParsedBlock( startPosition, offset, lineNumber, instr, jump ) );
     }
 
+    void addIfOperator( int startPosition, int offset, int lineNumber, WasmJawaCompareInstruction instr ) {
+        JumpInstruction jump = new JumpInstruction( startPosition + offset, 1, null, startPosition, lineNumber );
+        instructions.add( jump );
+        allParsedOperations.add( new IfParsedBlock( startPosition, offset, lineNumber, instr, jump ) );
+    }
     /**
      * Add a new switch block.
      * 
@@ -1180,7 +1185,8 @@ class BranchManger {
      */
     private static class IfParsedBlock extends ParsedBlock {
 
-        private WasmNumericInstruction instr;
+        private WasmNumericInstruction normInstr = null;
+        private WasmJawaCompareInstruction jawaInstr = null;
 
         private JumpInstruction        jump;
 
@@ -1198,7 +1204,13 @@ class BranchManger {
          */
         private IfParsedBlock( int startPosition, int offset, int lineNumber, WasmNumericInstruction instr, JumpInstruction jump ) {
             super( JavaBlockOperator.IF, startPosition, offset, startPosition + 3, lineNumber );
-            this.instr = instr;
+            this.normInstr = instr;
+            this.jump = jump;
+        }
+
+        private IfParsedBlock( int startPosition, int offset, int lineNumber, WasmJawaCompareInstruction instr, JumpInstruction jump ) {
+            super (JavaBlockOperator.IF, startPosition, offset, startPosition + 3, lineNumber );
+            this.jawaInstr = instr;
             this.jump = jump;
         }
 
@@ -1206,42 +1218,47 @@ class BranchManger {
          * Negate the compare operation.
          */
         private void negateCompare() {
-            NumericOperator newOp;
-            switch( instr.numOp ) {
-                case eq:
-                    newOp = NumericOperator.ne;
-                    break;
-                case ne:
-                    newOp = NumericOperator.eq;
-                    break;
-                case gt:
-                    newOp = NumericOperator.le;
-                    break;
-                case lt:
-                    newOp = NumericOperator.ge;
-                    break;
-                case le:
-                    newOp = NumericOperator.gt;
-                    break;
-                case ge:
-                    newOp = NumericOperator.lt;
-                    break;
-                case ifnull:
-                    newOp = NumericOperator.ifnonnull;
-                    break;
-                case ifnonnull:
-                    newOp = NumericOperator.ifnull;
-                    break;
-                case ref_eq:
-                    newOp = NumericOperator.ref_ne;
-                    break;
-                case ref_ne:
-                    newOp = NumericOperator.ref_eq;
-                    break;
-                default:
-                    throw new WasmException( "Not a compare operation: " + instr.numOp, lineNumber );
+            if (normInstr != null) {
+
+                NumericOperator newOp;
+                switch( normInstr.numOp ) {
+                    case eq:
+                        newOp = NumericOperator.ne;
+                        break;
+                    case ne:
+                        newOp = NumericOperator.eq;
+                        break;
+                    case gt:
+                        newOp = NumericOperator.le;
+                        break;
+                    case lt:
+                        newOp = NumericOperator.ge;
+                        break;
+                    case le:
+                        newOp = NumericOperator.gt;
+                        break;
+                    case ge:
+                        newOp = NumericOperator.lt;
+                        break;
+                    case ifnull:
+                        newOp = NumericOperator.ifnonnull;
+                        break;
+                    case ifnonnull:
+                        newOp = NumericOperator.ifnull;
+                        break;
+                    case ref_eq:
+                        newOp = NumericOperator.ref_ne;
+                        break;
+                    case ref_ne:
+                        newOp = NumericOperator.ref_eq;
+                        break;
+                    default:
+                        throw new WasmException( "Not a compare operation: " + normInstr.numOp, lineNumber );
+                }
+                normInstr.numOp = newOp;
+            } else {
+                jawaInstr.eq = !jawaInstr.eq;
             }
-            instr.numOp = newOp;
         }
     }
 

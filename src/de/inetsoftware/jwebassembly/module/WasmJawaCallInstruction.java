@@ -51,7 +51,6 @@ class WasmJawaCallInstruction extends WasmInstruction {
 
     private final JawaSignature sig;
 
-
     /**
      * Create an instance of numeric operation.
      *
@@ -91,6 +90,7 @@ class WasmJawaCallInstruction extends WasmInstruction {
 //                    break;
                 case INVOKESTATIC:
                     List<AnyType> sl = sig.convertToList();
+//                    if (needThisParam)
                     sl.add(0, type);
 //                    System.out.println("INVOKEVIRTUAL " + op + " " + fName.fullName + " " + needThisParam);
                     functionName = new JawaSyntheticFunctionName(type,"jawa", fname.toString(), type, sl.toArray(new AnyType[0]));

@@ -80,7 +80,6 @@ class WasmJawaArrayInstruction extends WasmInstruction {
         StringWriter funcName = new StringWriter();
         try {
             funcName.write(op.opcode);
-//            System.out.println("Generating " + op.name() + " with type " + type);
             switch ( op ) {
                 case BALOAD:
                 case CALOAD:
@@ -89,7 +88,7 @@ class WasmJawaArrayInstruction extends WasmInstruction {
                 case LALOAD:
                 case SALOAD:
                 case FALOAD:
-                    functionName = new JawaSyntheticFunctionName(null, moduleName, funcName.toString(), null, null, type);
+                    functionName = new JawaSyntheticFunctionName(null, moduleName, funcName.toString(), null, types.arrayType(type), ValueType.i32, null, type);
                     return functionName;
                 case BASTORE:
                 case CASTORE:
@@ -98,13 +97,13 @@ class WasmJawaArrayInstruction extends WasmInstruction {
                 case LASTORE:
                 case SASTORE:
                 case FASTORE:
-                    functionName = new JawaSyntheticFunctionName(null, moduleName, funcName.toString(), null, type, null);
+                    functionName = new JawaSyntheticFunctionName(null, moduleName, funcName.toString(), null, types.arrayType(type), ValueType.i32, type, null);
                     return functionName;
                 case AALOAD:
                     functionName = new JawaSyntheticFunctionName(type, moduleName, funcName.toString(), null, type, ValueType.i32, null, ((ArrayType) type).getArrayType());
                     return functionName;
                 case AASTORE:
-                    functionName = new JawaSyntheticFunctionName(type, moduleName, funcName.toString(), null,types.arrayType(type), ValueType.i32, type, null);
+                    functionName = new JawaSyntheticFunctionName(types.arrayType(type), moduleName, funcName.toString(), null,types.arrayType(type), ValueType.i32, type, null);
                     return functionName;
                 case NEWARRAY:
                     switch ((ValueType) type) {

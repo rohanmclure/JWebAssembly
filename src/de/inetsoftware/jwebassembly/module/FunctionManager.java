@@ -36,7 +36,7 @@ import de.inetsoftware.jwebassembly.WasmException;
  * 
  * @author Volker Berlin
  */
-class FunctionManager {
+public class FunctionManager {
 
     private final Map<FunctionName, FunctionState> states      = new LinkedHashMap<>();
 
@@ -148,9 +148,9 @@ class FunctionManager {
     FunctionName markAsNeeded( @Nonnull FunctionName name ) {
         FunctionState state = getOrCreate( name );
         if( state.state == State.None ) {
-            if( isFinish ) {
-                throw new WasmException( "Prepare was already finish: " + name.signatureName, -1 );
-            }
+            //if( isFinish ) { TODO
+            //    throw new WasmException( "Prepare was already finish: " + name.signatureName, -1 );
+            //}
             state.state = State.Needed;
             JWebAssembly.LOGGER.fine( "\t\tcall: " + name.signatureName );
             usedClasses.add( name.className );

@@ -530,6 +530,17 @@ public abstract class WasmCodeBuilder {
         return numeric;
     }
 
+    protected WasmJawaCompareInstruction addJawaCompareInstruction( @Nullable JawaOpcodes.JawaFuncOpcode numOp, boolean eq, @Nullable ValueType valueType, int javaCodePos, int lineNumber ) {
+        WasmJawaCompareInstruction compare = new WasmJawaCompareInstruction( numOp, eq, valueType, types, javaCodePos, lineNumber );
+        instructions.add( compare );
+        SyntheticFunctionName name = compare.createJawaFunction();
+        if (name != null) {
+            functions.markAsNeeded( name );
+            functions.markAsImport(name, name.getAnnotation());
+        }
+        return compare;
+    }
+
     /**
      * Add a value convert/cast instruction.
      * 
@@ -839,8 +850,8 @@ public abstract class WasmCodeBuilder {
     protected void addJawaCallInstruction (JawaOpcodes.JawaFuncOpcode op, @Nonnull String typeName, @Nonnull FunctionName fName, @Nonnull NamedStorageType fieldName, int javaCodePos, int lineNumber ) {
         // Currently jawa doesn't have <init>
         if( "<init>".equals( fName.methodName ) && fName.className.contains("java/lang")) {
-                addCallInstruction(fName, javaCodePos, lineNumber);
-                return;
+            addCallInstruction(fName, javaCodePos, lineNumber);
+            return;
         }
 
         fName = functions.markAsNeeded( fName );

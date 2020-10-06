@@ -336,7 +336,10 @@ public class TypeManager {
             case '[':
                 return this.arrayType(this.valueOfSig(sig.substring(1)));
             default:
-                throw new WasmException("Invalid signature passed", -1);
+                AnyType s = this.valueOf(sig); // todo fix
+                if (s != null)
+                    return s;
+                throw new WasmException("Invalid signature passed " + sig, -1);
         }
     }
 

@@ -579,13 +579,11 @@ class JavaMethodWasmCodeBuilder extends WasmCodeBuilder {
                         addJawaArrayInstruction(JawaOpcodes.JawaFuncOpcode.AASTORE, storeType, codePos, lineNumber);
                         break;
                     case 165: // if_acmpeq -> If block and then acmpeq
-
-//                        opIfCompareCondition( NumericOperator.ref_eq, byteCode, codePos, lineNumber );
-//                        break;
+                        opIfJawaCompareCondition( JawaOpcodes.JawaFuncOpcode.ACMPEQ, true, byteCode, codePos, lineNumber );
+                        break;
                     case 166: // if_acmpne
-                        throw new Exception("Cannot handle ACMPEQ yet");
-//                        opIfCompareCondition( NumericOperator.ref_ne, byteCode, codePos, lineNumber );
-//                        break;
+                        opIfJawaCompareCondition( JawaOpcodes.JawaFuncOpcode.ACMPEQ, false, byteCode, codePos, lineNumber );
+                        break;
                     case 189: // anewarray
                         String name = ((ConstantClass)constantPool.get( byteCode.readUnsignedShort() )).getName();
                         type = getTypeManager().valueOfSig(name);
@@ -595,14 +593,14 @@ class JavaMethodWasmCodeBuilder extends WasmCodeBuilder {
                         type = ((ArrayType)findValueTypeFromStack( 1, codePos )).getArrayType();
                         addJawaArrayInstruction(JawaOpcodes.JawaFuncOpcode.ARRAYLENGTH, type, codePos, lineNumber);
                         break;
-                    case 191: // athrow
+                    case 191: // athrow // todo
                         addBlockInstruction( WasmBlockOperator.THROW, null, codePos, lineNumber );
                         break;
                     case 51: // baload
-                        addJawaArrayInstruction(JawaOpcodes.JawaFuncOpcode.BALOAD, ValueType.i8, codePos, lineNumber);
+                        addJawaArrayInstruction(JawaOpcodes.JawaFuncOpcode.BALOAD, ValueType.bool, codePos, lineNumber);
                         break;
                     case 84: // bastore
-                        addJawaArrayInstruction(JawaOpcodes.JawaFuncOpcode.BASTORE, ValueType.i8, codePos, lineNumber);
+                        addJawaArrayInstruction(JawaOpcodes.JawaFuncOpcode.BASTORE, ValueType.bool, codePos, lineNumber);
                         break;
                     case 52: // caload
                         addJawaArrayInstruction(JawaOpcodes.JawaFuncOpcode.CALOAD, ValueType.i16, codePos, lineNumber);
@@ -904,11 +902,11 @@ class JavaMethodWasmCodeBuilder extends WasmCodeBuilder {
         branchManager.addIfOperator( codePos, offset, byteCode.getLineNumber(), compare );
     }
 
-//    private void opIfJawaCompareCondition(JawaOpcodes.JawaFuncOpcode compareOp, CodeInputStream byteCode, int codePos, int lineNumber ) throws IOException {
-//        int offset = byteCode.readShort();
-//        WasmJawaCompareInstruction compare = addJawaCompareInstruction( compareOp, ValueType.i32, codePos, lineNumber );
-//        branchManager.addIfOperator( codePos, offset, byteCode.getLineNumber(), compare );
-//    }
+    private void opIfJawaCompareCondition(JawaOpcodes.JawaFuncOpcode compareOp, boolean eq, CodeInputStream byteCode, int codePos, int lineNumber ) throws IOException {
+        int offset = byteCode.readShort();
+        WasmJawaCompareInstruction compare = addJawaCompareInstruction( compareOp, eq, ValueType.i32, codePos, lineNumber );
+        branchManager.addIfOperator( codePos, offset, byteCode.getLineNumber(), compare );
+    }
 
     /**
      * Handle the different compare operator. The compare operator returns the integer values -1, 0 or 1. There is no
