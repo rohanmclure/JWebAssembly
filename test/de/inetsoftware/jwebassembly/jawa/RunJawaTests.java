@@ -140,6 +140,9 @@ public class RunJawaTests {
     public void eq03() { run( eq03.class ); }
 
     @Test
+    public void except00() { run( except00.class ); }
+
+    @Test
     public void false00() { run( false00.class ); }
 
     @Test
@@ -390,6 +393,9 @@ public class RunJawaTests {
 
     @Test
     public void this00() { run( this00.class ); }
+
+    @Test
+    public void throw00() { run( throw00.class ); }
 
     @Test
     public void true00() { run( true00.class ); }
