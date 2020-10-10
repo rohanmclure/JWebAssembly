@@ -5,7 +5,7 @@ import de.inetsoftware.jwebassembly.jawa.RunTest;
 
 import static de.inetsoftware.jwebassembly.jawa.Print.puti;
 
-@RunTest(intInput = 11, exception = "NullPointerException")
+@RunTest(intInput = 11, exception = "NULL_DEREF")
 public class npe02 {
     int f;
 
