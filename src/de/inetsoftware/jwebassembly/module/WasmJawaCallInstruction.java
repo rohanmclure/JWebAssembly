@@ -80,20 +80,17 @@ class WasmJawaCallInstruction extends WasmInstruction {
             StringWriter fname = new StringWriter();
             fname.write(op.opcode);
             fname.writeName(fName.methodName);
-            fname.writeSig(fName.className);
+//            fname.writeSig(fName.className);
             switch ( op ) {
                 case INVOKESPECIAL:
                 case INVOKEVIRTUAL:
-//                    List<AnyType> sl = sig.convertToList();
-//                    sl.add(0, type);
-//                    functionName = new JawaSyntheticFunctionName(type,"jawa", fname.toString(), type, sl.toArray(new AnyType[0]));
-//                    break;
-                case INVOKESTATIC:
                     List<AnyType> sl = sig.convertToList();
-//                    if (needThisParam)
                     sl.add(0, type);
-//                    System.out.println("INVOKEVIRTUAL " + op + " " + fName.fullName + " " + needThisParam);
-                    functionName = new JawaSyntheticFunctionName(type,"jawa", fname.toString(), type, sl.toArray(new AnyType[0]));
+                    functionName = new JawaSyntheticFunctionName(type,"jawa", fname.toString(), true, null, sl.toArray(new AnyType[0]));
+                    break;
+                case INVOKESTATIC:
+                    sl = sig.convertToList();
+                    functionName = new JawaSyntheticFunctionName(type,"jawa", fname.toString(), true, null, sl.toArray(new AnyType[0]));
                     break;
                 case INVOKEINTERFACE:
                 case INVOKEDYNAMIC:
@@ -152,8 +149,9 @@ class WasmJawaCallInstruction extends WasmInstruction {
         switch ( op ) {
             case INVOKEVIRTUAL:
             case INVOKESPECIAL:
+                return sig.params().size() + 1;
             case INVOKESTATIC:
-                return sig.params().size() + (needThisParam ? 1 : 0);
+                return sig.params().size();
             case SYSCALL: // todo need to think of a better way to do this :(
                 return 1;
             default:

@@ -17,7 +17,6 @@
 package de.inetsoftware.jwebassembly.module;
 
 import de.inetsoftware.jwebassembly.WasmException;
-import de.inetsoftware.jwebassembly.javascript.JavaScriptSyntheticFunctionName;
 import de.inetsoftware.jwebassembly.jawa.JawaOpcodes;
 import de.inetsoftware.jwebassembly.jawa.JawaSyntheticFunctionName;
 import de.inetsoftware.jwebassembly.jawa.StringWriter;
@@ -88,7 +87,7 @@ class WasmJawaArrayInstruction extends WasmInstruction {
                 case LALOAD:
                 case SALOAD:
                 case FALOAD:
-                    functionName = new JawaSyntheticFunctionName(null, moduleName, funcName.toString(), null, types.arrayType(type), ValueType.i32, null, type);
+                    functionName = new JawaSyntheticFunctionName(null, moduleName, funcName.toString(), true, null, types.arrayType(type), ValueType.i32, null, type);
                     return functionName;
                 case BASTORE:
                 case CASTORE:
@@ -97,13 +96,13 @@ class WasmJawaArrayInstruction extends WasmInstruction {
                 case LASTORE:
                 case SASTORE:
                 case FASTORE:
-                    functionName = new JawaSyntheticFunctionName(null, moduleName, funcName.toString(), null, types.arrayType(type), ValueType.i32, type, null);
+                    functionName = new JawaSyntheticFunctionName(null, moduleName, funcName.toString(), true, null, types.arrayType(type), ValueType.i32, type, null);
                     return functionName;
                 case AALOAD:
-                    functionName = new JawaSyntheticFunctionName(type, moduleName, funcName.toString(), null, type, ValueType.i32, null, ((ArrayType) type).getArrayType());
+                    functionName = new JawaSyntheticFunctionName(type, moduleName, funcName.toString(), true, null, type, ValueType.i32, null, ((ArrayType) type).getArrayType());
                     return functionName;
                 case AASTORE:
-                    functionName = new JawaSyntheticFunctionName(types.arrayType(type), moduleName, funcName.toString(), null,types.arrayType(type), ValueType.i32, type, null);
+                    functionName = new JawaSyntheticFunctionName(types.arrayType(type), moduleName, funcName.toString(), true, null,types.arrayType(type), ValueType.i32, type, null);
                     return functionName;
                 case NEWARRAY:
                     switch ((ValueType) type) {
@@ -128,13 +127,13 @@ class WasmJawaArrayInstruction extends WasmInstruction {
                         default:
                             throw new WasmException("Unsupported NEWARRAY type", -1);
                     }
-                    functionName = new JawaSyntheticFunctionName(types.arrayType(type), moduleName, funcName.toString(), types.arrayType( type ), ValueType.i32, null, types.arrayType( type ));
+                    functionName = new JawaSyntheticFunctionName(types.arrayType(type), moduleName, funcName.toString(), true, null, ValueType.i32, null, types.arrayType( type ));
                     return functionName;
                 case ANEWARRAY:
-                    functionName = new JawaSyntheticFunctionName(types.arrayType(type), moduleName, funcName.toString(), types.arrayType(type), ValueType.i32, null,types.arrayType(type));
+                    functionName = new JawaSyntheticFunctionName(types.arrayType(type), moduleName, funcName.toString(), true, null, ValueType.i32, null,types.arrayType(type));
                     return functionName;
                 case ARRAYLENGTH:
-                    functionName = new JawaSyntheticFunctionName(types.arrayType(type), moduleName, funcName.toString(), types.arrayType( type ), types.arrayType(type), null, ValueType.i32);
+                    functionName = new JawaSyntheticFunctionName(types.arrayType(type), moduleName, funcName.toString(), true, null, types.arrayType(type), null, ValueType.i32);
                     return functionName;
 //                case MULTIANEWARRAY:
 //

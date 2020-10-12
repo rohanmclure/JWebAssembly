@@ -28,7 +28,6 @@ import de.inetsoftware.jwebassembly.wasm.ValueType;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.io.IOException;
-import java.util.List;
 
 /**
  * WasmInstruction for JAWA operations.
@@ -79,33 +78,33 @@ class WasmJawaStructInstruction extends WasmInstruction {
         StringWriter fname = new StringWriter();
         try {
             fname.write(op.opcode);
-//            System.out.println("Generating " + op + " " + type);
             switch (op) {
                 case NEW:
                     fname.writeSig("NEW" + type.name);
-                    functionName = new JawaSyntheticFunctionName(type,"jawa", fname.toString(), type, null, type);
+                    functionName = new JawaSyntheticFunctionName(type,"jawa", fname.toString(), true, null, null, type);
                     break;
                 case INSTANCEOF:
-                    functionName = new JawaSyntheticFunctionName(type,"jawa", fname.toString(), type, fieldName.getType(), null, ValueType.bool);
+                    functionName = new JawaSyntheticFunctionName(type,"jawa", fname.toString(), true, null, fieldName.getType(), null, ValueType.bool);
                     break;
                 case GETFIELD:
                     fname.writeName(fieldName.getName());
-                    functionName = new JawaSyntheticFunctionName(type, "jawa", fname.toString(), type, type, null, fieldName.getType());
+                    functionName = new JawaSyntheticFunctionName(type, "jawa", fname.toString(), true, null, type, null, fieldName.getType());
                     break;
                 case GETSTATIC:
                     fname.writeName(fieldName.getName());
-                    functionName = new JawaSyntheticFunctionName(type, "jawa", fname.toString(), type, null, fieldName.getType());
+                    functionName = new JawaSyntheticFunctionName(type, "jawa", fname.toString(), true, null, null, fieldName.getType());
                     break;
                 case PUTFIELD:
                     fname.writeName(fieldName.getName());
-                    functionName = new JawaSyntheticFunctionName(type, "jawa", fname.toString(), type, type, fieldName.getType(), null);
+                    functionName = new JawaSyntheticFunctionName(type, "jawa", fname.toString(), true, null, type, fieldName.getType(), null);
                     break;
                 case PUTSTATIC:
                     fname.writeName(fieldName.getName());
-                    functionName = new JawaSyntheticFunctionName(type, "jawa", fname.toString(), type, fieldName.getType(), null);
+                    functionName = new JawaSyntheticFunctionName(type, "jawa", fname.toString(), true, null, fieldName.getType(), null);
                     break;
                 case CHECKCAST:
-//                    functionName = new JawaSyntheticFunctionName(type, "jawa", fname.toString(), type, );
+                    functionName = new JawaSyntheticFunctionName(type, "jawa", fname.toString(), true, null, options.types.valueOf("java/lang/Object"), null, type);
+                    break;
                 default:
                     throw new WasmException("Cannot deal with " + op + " currently", -1);
             }
@@ -141,6 +140,7 @@ class WasmJawaStructInstruction extends WasmInstruction {
     AnyType getPushValueType() {
         switch ( op ) {
             case NEW:
+            case CHECKCAST:
                 return type;
             case INSTANCEOF:
                 return ValueType.bool;
@@ -150,7 +150,6 @@ class WasmJawaStructInstruction extends WasmInstruction {
             case PUTFIELD:
             case PUTSTATIC:
                 return null;
-            case CHECKCAST:
             default:
                 throw new WasmException("Unknown push value right now :( " + op, -1);
         }
@@ -165,10 +164,10 @@ class WasmJawaStructInstruction extends WasmInstruction {
             case INSTANCEOF:
             case GETFIELD:
             case PUTSTATIC:
+            case CHECKCAST:
                 return 1;
             case PUTFIELD:
                 return 2;
-            case CHECKCAST:
             default:
                 throw new WasmException( "Unknown pop count right now for " + op, -1);
         }

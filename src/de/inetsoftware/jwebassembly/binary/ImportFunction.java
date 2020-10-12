@@ -32,11 +32,13 @@ class ImportFunction extends Function {
     final String name;
 
     final AnyType arg;
+    final AnyType second_arg;
 
-    ImportFunction( String module, String name, AnyType arg ) {
+    ImportFunction( String module, String name, AnyType arg, AnyType second_arg ) {
         this.module = module;
         this.name = name;
         this.arg = arg;
+        this.second_arg = second_arg;
     }
 
     /**
@@ -52,9 +54,13 @@ class ImportFunction extends Function {
         stream.write( bytes );
         if (arg != null) {
             stream.writeVaruint32( ExternalKind.Args.ordinal() );
-            stream.writeVaruint32( 1 ); // args count
+            stream.writeVaruint32( second_arg != null ? 2 : 1 ); // args count
             stream.writeVaruint32(ExternalKind.TypeImport.ordinal());
             stream.writeVaruint32(arg.getJawaCode());
+            if (second_arg != null) {
+                stream.writeVaruint32(ExternalKind.TypeImport.ordinal());
+                stream.writeVaruint32(second_arg.getJawaCode());
+            }
         }
         stream.writeVaruint32( ExternalKind.Function.ordinal() );
         stream.writeVaruint32( this.typeId );

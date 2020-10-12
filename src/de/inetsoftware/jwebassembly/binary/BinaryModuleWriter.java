@@ -75,6 +75,8 @@ public class BinaryModuleWriter extends ModuleWriter implements InstructionOpcod
 
     private Map<String, ImportFunction> functionImports     = new LinkedHashMap<>();
 
+    private Map<String, ImportFunction> delayedFunctionImports     = new LinkedHashMap<>();
+
     private Map<String, ImportType>     typeImports         = new LinkedHashMap<>();
 
     private Map<String, ImportCommand>  commandImports      = new LinkedHashMap<>();
@@ -124,8 +126,9 @@ public class BinaryModuleWriter extends ModuleWriter implements InstructionOpcod
         writeSection( SectionType.Import, typeImports.values());        // Import the JAWA types
         writeSection( SectionType.Type, functionTypes );                // Import the function types
         writeSection( SectionType.Function, functions.values() );       // Function Index -> Signature
+        writeSection( SectionType.Import, functionImports.values() );   // Import the normal JAWA functions
         writeSection( SectionType.Import, commandImports.values());     // Define JAWA commands
-        writeSection( SectionType.Import, functionImports.values() );   // Import the JAWA functions
+        writeSection( SectionType.Import, delayedFunctionImports.values() );   // Import the JAWA functions that need JAWA commands
         writeSection( SectionType.Import, globalImports.values());      // Import global jawa consts
         writeTableSection();
         writeMemorySection();
@@ -189,7 +192,7 @@ public class BinaryModuleWriter extends ModuleWriter implements InstructionOpcod
         stream.writeVaruint32( count ); // count of tables
 
         // indirect function table 
-        int elemCount = callIndirect ? functionImports.size() + functions.size() : 0;
+        int elemCount = callIndirect ? functionImports.size() + functions.size() + delayedFunctionImports.size() : 0;
         stream.writeValueType( ValueType.funcref ); // the type of elements
         stream.writeVaruint32( 0 ); // flags; 1-maximum is available, 0-no maximum value available
         stream.writeVaruint32( elemCount ); // initial length
@@ -289,7 +292,7 @@ public class BinaryModuleWriter extends ModuleWriter implements InstructionOpcod
             return;
         }
 
-        int elemCount = functionImports.size() + functions.size();
+        int elemCount = delayedFunctionImports.size() + functionImports.size() + functions.size();
         WasmOutputStream stream = new WasmOutputStream( options );
         stream.writeVaruint32( 1 ); // count of element segments to follow
 
@@ -387,8 +390,9 @@ public class BinaryModuleWriter extends ModuleWriter implements InstructionOpcod
         // write function names
         stream.write( 1 ); // 1 - Function name
         WasmOutputStream section = new WasmOutputStream( options );
-        section.writeVaruint32( functionImports.size() + functions.size() );
+        section.writeVaruint32( functionImports.size() + delayedFunctionImports.size() + functions.size() );
         writeDebugFunctionNames( functionImports.entrySet(), section );
+        writeDebugFunctionNames( delayedFunctionImports.entrySet(), section );
         writeDebugFunctionNames( functions.entrySet(), section );
         stream.writeVaruint32( section.size() );
         section.writeTo( stream );
@@ -396,8 +400,9 @@ public class BinaryModuleWriter extends ModuleWriter implements InstructionOpcod
         // write function parameter names
         stream.write( 2 ); // 2 - Local names
         section.reset();
-        section.writeVaruint32( functionImports.size() + functions.size() );
+        section.writeVaruint32( functionImports.size() + delayedFunctionImports.size() + functions.size() );
         writeDebugParameternNames( functionImports.entrySet(), section );
+        writeDebugParameternNames( delayedFunctionImports.entrySet(), section );
         writeDebugParameternNames( functions.entrySet(), section );
         stream.writeVaruint32( section.size() );
         section.writeTo( stream );
@@ -545,10 +550,13 @@ public class BinaryModuleWriter extends ModuleWriter implements InstructionOpcod
      * {@inheritDoc}
      */
     @Override
-    protected void prepareImport( FunctionName name, String importModule, String importName, AnyType arg ) {
+    protected void prepareImport(FunctionName name, String importModule, String importName, boolean delayed, AnyType arg, AnyType second_arg) {
         ImportFunction importFunction;
-        function = importFunction = new ImportFunction(importModule, importName, arg);
-        functionImports.put( name.signatureName, importFunction );
+        function = importFunction = new ImportFunction(importModule, importName, arg, second_arg);
+        if (delayed)
+            delayedFunctionImports.put( name.signatureName, importFunction);
+        else
+            functionImports.put( name.signatureName, importFunction );
     }
 
     @Override
@@ -578,6 +586,9 @@ public class BinaryModuleWriter extends ModuleWriter implements InstructionOpcod
             function.id = id++;
         }
         for( ImportFunction entry : functionImports.values() ) {
+            entry.id = id++;
+        }
+        for (ImportFunction entry : delayedFunctionImports.values() ) {
             entry.id = id++;
         }
     }
@@ -1278,12 +1289,15 @@ public class BinaryModuleWriter extends ModuleWriter implements InstructionOpcod
         Function func = functions.get( signatureName );
         if( func == null ) {
             func = functionImports.get( signatureName );
-            if( func == null ) {
-                func = abstracts.get( signatureName );
+            if ( func == null ) {
+                func = delayedFunctionImports.get( signatureName );
                 if( func == null ) {
-                    func = new Function();
-                    func.id = functions.size() + functionImports.size();
-                    functions.put( signatureName, func );
+                    func = abstracts.get( signatureName );
+                    if( func == null ) {
+                        func = new Function();
+                        func.id = functions.size() + functionImports.size() + delayedFunctionImports.size();
+                        functions.put( signatureName, func );
+                    }
                 }
             }
         }

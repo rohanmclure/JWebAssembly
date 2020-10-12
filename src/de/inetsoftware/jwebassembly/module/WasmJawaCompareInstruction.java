@@ -21,7 +21,6 @@ import de.inetsoftware.jwebassembly.jawa.JawaOpcodes;
 import de.inetsoftware.jwebassembly.jawa.JawaSyntheticFunctionName;
 import de.inetsoftware.jwebassembly.jawa.StringWriter;
 import de.inetsoftware.jwebassembly.wasm.AnyType;
-import de.inetsoftware.jwebassembly.wasm.ArrayType;
 import de.inetsoftware.jwebassembly.wasm.ValueType;
 
 import javax.annotation.Nonnull;
@@ -87,7 +86,7 @@ class WasmJawaCompareInstruction extends WasmInstruction {
             funcName.write(op.opcode);
             switch ( op ) {
                 case ACMPEQ:
-                    functionName = new JawaSyntheticFunctionName(null, moduleName, funcName.toString(), null, types.valueOf("java/lang/Object"), types.valueOf("java/lang/Object"), null, ValueType.bool);
+                    functionName = new JawaSyntheticFunctionName(null, moduleName, funcName.toString(), false, null, types.valueOf("java/lang/Object"), types.valueOf("java/lang/Object"), null, ValueType.bool);
                     return functionName;
                 case FCMPG:
                 case FCMPL:
@@ -120,6 +119,7 @@ class WasmJawaCompareInstruction extends WasmInstruction {
     AnyType getPushValueType() {
         switch ( op ) {
             case ACMPEQ:
+                return ValueType.i32;
             case FCMPG:
             case FCMPL:
             case FREM:
@@ -127,7 +127,7 @@ class WasmJawaCompareInstruction extends WasmInstruction {
             case DCMPL:
             case DREM:
             default:
-                throw new WasmException("Invalid jawa opcode " + op, -1);
+                throw new WasmException("Invalid jawa opcode for push value type " + op, -1);
         }
     }
 
@@ -146,7 +146,7 @@ class WasmJawaCompareInstruction extends WasmInstruction {
             case DREM:
                 return 2;
             default:
-                throw new WasmException("Invalid jawa opcode " + op, -1);
+                throw new WasmException("Invalid jawa opcode for pop value type " + op, -1);
         }
     }
 }

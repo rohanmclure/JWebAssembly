@@ -122,6 +122,12 @@ public class RunJawaTests {
     public void char00() { run( char00.class ); }
 
     @Test
+    public void checkcast00() { run( checkcast00.class ); }
+
+    @Test
+    public void checkcast01() { run( checkcast01.class ); }
+
+    @Test
     public void div01() { run( div01.class ); }
 
     @Test
@@ -326,6 +332,9 @@ public class RunJawaTests {
     public void oror04() { run( oror04.class ); }
 
     @Test
+    public void print00() { run( print00.class ); }
+
+    @Test
     public void ret01() { run( ret01.class ); }
 
     @Test
@@ -372,6 +381,15 @@ public class RunJawaTests {
 
     @Test
     public void str00() { run( str00.class ); }
+
+    @Test
+    public void str01() { run( str01.class ); }
+
+    @Test
+    public void str02() { run( str02.class ); }
+
+    @Test
+    public void str03() { run( str03.class ); }
 
     @Test
     public void sub01() { run( sub01.class ); }

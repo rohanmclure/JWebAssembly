@@ -49,8 +49,8 @@ class TreeNode
   {
     value = 1;
     if (levels <= 1) {
-      if (levels <= 0) 
-	throw new RuntimeException("Number of levels must be positive no.");
+//      if (levels <= 0)
+//	throw new RuntimeException("Number of levels must be positive no.");
       left = null;
       right = null;
     } else {

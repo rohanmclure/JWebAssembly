@@ -104,10 +104,11 @@ public abstract class ModuleWriter implements Closeable {
      *            the import module name if it is a import function
      * @param importName
      *            the import name if it is a import function
+     * @param delayed
      * @throws IOException
      *             if any I/O error occur
      */
-    protected abstract void prepareImport( FunctionName name, String importModule, String importName, AnyType arg ) throws IOException;
+    protected abstract void prepareImport( FunctionName name, String importModule, String importName, boolean delayed, AnyType args, AnyType second_arg ) throws IOException;
 
     public abstract void importType(String importModule, String importName, StructType type, StructType parent, AnyType... args) throws IOException;
 

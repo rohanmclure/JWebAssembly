@@ -252,11 +252,13 @@ public class TextModuleWriter extends ModuleWriter {
      * {@inheritDoc}
      */
     @Override
-    protected void prepareImport( FunctionName name, String importModule, String importName, AnyType arg ) throws IOException {
+    protected void prepareImport(FunctionName name, String importModule, String importName, boolean delayed, AnyType arg, AnyType second_arg) throws IOException {
         if( importName != null ) {
+            Function func = new Function();
+            abstracts.put( name.signatureName, func );
             methodOutput = imports;
             newline( methodOutput );
-            methodOutput.append( "(import \"" ).append( importModule ).append( "\" \"" ).append( importName ).append( "\" (func $" ).append( normalizeName( name ) );
+            methodOutput.append( "(import \"" ).append( importModule ).append( "\" \"" ).append( importName ).append( "\" (func $" ).append( name );
             isImport = true;
         }
     }

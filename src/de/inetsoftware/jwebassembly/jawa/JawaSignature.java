@@ -87,9 +87,9 @@ public class JawaSignature {
             switch (s) {
                 case '[':
                     i++;
+                    sb.append('L');
                     switch(sig.toCharArray()[i]) {
                         case 'L':
-                            sb.append('L');
                             int start = i;
                             int end = 0;
                             while(sig.toCharArray()[i] != ';') {
@@ -98,19 +98,30 @@ public class JawaSignature {
                             jawaTypes.add(types.arrayType(types.valueOf(sig.substring(start + 1,end + 1))));
                             break;
                         case 'Z': // boolean
+                            jawaTypes.add(types.arrayType(ValueType.bool));
+                            break;
                         case 'B': // byte
                         case 'C': // char
+                            jawaTypes.add(types.arrayType(ValueType.i8));
+                            break;
                         case 'S': // short
+                            jawaTypes.add(types.arrayType(ValueType.i16));
+                            break;
                         case 'I': // int
+                            jawaTypes.add(types.arrayType(ValueType.i32));
+                            break;
                         case 'D': // double
+                            jawaTypes.add(types.arrayType(ValueType.f64));
+                            break;
                         case 'F': // float
+                            jawaTypes.add(types.arrayType(ValueType.f32));
+                            break;
                         case 'J': // long
+                            jawaTypes.add(types.arrayType(ValueType.i64));
+                            break;
                         case 'V': // void
                         default:
-                            System.out.println(sig + " " + sig.toCharArray()[i]);
-                            // todo add primitive arrays
-                            int[] a = new int[3];
-                            a[4] = 3;
+                            throw new WasmException("Invalid Array " + sig, -1);
                     }
                     break;
                 case 'L':
@@ -143,6 +154,7 @@ public class JawaSignature {
         AnyType r = null;
         boolean reachedNull = false;
         boolean nextArray = false;
+        idx = 1;
         while (idx < sig.length()) {
             switch (sig.charAt(idx++)) {
                 case ')':
@@ -158,31 +170,31 @@ public class JawaSignature {
                         String name = sig.substring(idx, idx2);
                         idx = idx2 + 1;
                         return types.valueOf(name);
+                    } else {
+                        while (sig.charAt(idx++) != ';');
                     }
                 case 'Z': // boolean
                     if (reachedNull)
-                        return nextArray ? ValueType.bool : ValueType.i32;
+                        return !nextArray ? ValueType.bool : types.arrayType(ValueType.bool);;
                 case 'B': // byte
-                    if (reachedNull)
-                        return nextArray ? ValueType.i8 : ValueType.i32;
                 case 'C': // char
                     if (reachedNull)
-                        return nextArray ? ValueType.i8 : ValueType.i32;
+                        return !nextArray ? ValueType.i8 : types.arrayType(ValueType.i8);
                 case 'S': // short
                     if (reachedNull)
-                        return nextArray ? ValueType.i16 : ValueType.i32;
+                        return !nextArray ? ValueType.i16 : types.arrayType(ValueType.i16);
                 case 'I': // int
                     if (reachedNull)
-                        return ValueType.i32;
+                        return !nextArray ? ValueType.i32 : types.arrayType(ValueType.i32);
                 case 'D': // double
                     if (reachedNull)
-                        return ValueType.f64;
+                        return !nextArray ? ValueType.f64 : types.arrayType(ValueType.f64);
                 case 'F': // float
                     if (reachedNull)
-                        return ValueType.f32;
+                        return !nextArray ? ValueType.f32 : types.arrayType(ValueType.f32);
                 case 'J': // long
                     if (reachedNull)
-                        return ValueType.i64;
+                        return !nextArray ? ValueType.i64 : types.arrayType(ValueType.i64);
                 case 'V': // void
                     if (reachedNull)
                         return null;
@@ -197,48 +209,84 @@ public class JawaSignature {
     public List<AnyType> params() {
 
         ArrayList<AnyType> sigList = new ArrayList<>();
-        boolean nextArray = false; // TODO todo deal with nextArrays
+        int nextArray = 0; // TODO todo deal with nextArrays
+        idx = 1;
         while (idx < sig.length()) {
             switch (sig.charAt(idx++)) {
                 case ')':
                     return sigList;
                 case '[': // array
-                    nextArray = true;
+                    nextArray += 1;
                     break;
                 case 'L':
                     int idx2 = sig.indexOf( ';', idx );
                     String name = sig.substring( idx, idx2 );
                     idx = idx2 + 1;
-                    sigList.add(types.valueOf(name));
-                    nextArray = false;
+                    AnyType t = types.valueOf(name);
+                    for (int i = 0; i < nextArray; i++) {
+                        t = types.arrayType(t);
+                    }
+                    sigList.add(t);
+                    nextArray = 0;
                     break;
                 case 'Z': // boolean
-                    sigList.add(nextArray ? ValueType.bool : ValueType.i32);
+                    t = ValueType.bool;
+                    for (int i = 0; i < nextArray; i++) {
+                        t = types.arrayType(t);
+                    }
+                    sigList.add(t);
+                    nextArray = 0;
                     break;
                 case 'B': // byte
-                    sigList.add(nextArray ? ValueType.i8 : ValueType.i32);
-                    break;
                 case 'C': // char
-                    sigList.add(nextArray ? ValueType.u16 : ValueType.i32);
+                    t = ValueType.i8;
+                    for (int i = 0; i < nextArray; i++) {
+                        t = types.arrayType(t);
+                    }
+                    sigList.add(t);
+                    nextArray = 0;
                     break;
                 case 'S': // short
-                    sigList.add(nextArray ? ValueType.i16 : ValueType.i32);
+                    t = ValueType.i16;
+                    for (int i = 0; i < nextArray; i++) {
+                        t = types.arrayType(t);
+                    }
+                    sigList.add(t);
+                    nextArray = 0;
                     break;
                 case 'I': // int
-                    sigList.add(ValueType.i32);
+                    t = ValueType.i32;
+                    for (int i = 0; i < nextArray; i++) {
+                        t = types.arrayType(t);
+                    }
+                    sigList.add(t);
+                    nextArray = 0;
                     break;
                 case 'D': // double
-                    sigList.add(ValueType.f64);
+                    t = ValueType.f64;
+                    for (int i = 0; i < nextArray; i++) {
+                        t = types.arrayType(t);
+                    }
+                    sigList.add(t);
+                    nextArray = 0;
                     break;
                 case 'F': // float
-                    sigList.add(ValueType.f32);
+                    t = ValueType.f32;
+                    for (int i = 0; i < nextArray; i++) {
+                        t = types.arrayType(t);
+                    }
+                    sigList.add(t);
+                    nextArray = 0;
                     break;
                 case 'J': // long
-                    sigList.add(ValueType.i64);
+                    t = ValueType.i64;
+                    for (int i = 0; i < nextArray; i++) {
+                        t = types.arrayType(t);
+                    }
+                    sigList.add(t);
+                    nextArray = 0;
                     break;
                 case 'V': // void
-                    sigList.add(null);
-                    break;
                 default:
                     throw new WasmException( "Not supported Java data type in method signature: " + sig.substring( idx - 1 ), -1 );
             }
@@ -248,56 +296,12 @@ public class JawaSignature {
 
     public List<AnyType> convertToList() {
 
-        ArrayList<AnyType> sigList = new ArrayList<>();
-        boolean nextArray = false; // TODO todo deal with nextArrays
-        while (idx < sig.length()) {
-            switch (sig.charAt(idx++)) {
-                case ')':
-                    sigList.add(null);
-                    nextArray = false;
-                    break;
-                case '[': // array
-                    nextArray = true;
-                    break;
-                case 'L':
-                    int idx2 = sig.indexOf( ';', idx );
-                    String name = sig.substring( idx, idx2 );
-                    idx = idx2 + 1;
-                    sigList.add(types.valueOf(name));
-                    nextArray = false;
-                    break;
-                case 'Z': // boolean
-                    sigList.add(nextArray ? ValueType.bool : ValueType.i32);
-                    break;
-                case 'B': // byte
-                    sigList.add(nextArray ? ValueType.i8 : ValueType.i32);
-                    break;
-                case 'C': // char
-                    sigList.add(nextArray ? ValueType.u16 : ValueType.i32);
-                    break;
-                case 'S': // short
-                    sigList.add(nextArray ? ValueType.i16 : ValueType.i32);
-                    break;
-                case 'I': // int
-                    sigList.add(ValueType.i32);
-                    break;
-                case 'D': // double
-                    sigList.add(ValueType.f64);
-                    break;
-                case 'F': // float
-                    sigList.add(ValueType.f32);
-                    break;
-                case 'J': // long
-                    sigList.add(ValueType.i64);
-                    break;
-                case 'V': // void
-                    sigList.add(null);
-                    break;
-                default:
-                    throw new WasmException( "Not supported Java data type in method signature: " + sig.substring( idx - 1 ), -1 );
-            }
-        }
-        return sigList;
+        List<AnyType> params = params();
+        params.add(null);
+        AnyType result = result();
+        if (result != null)
+            params.add(result);
+        return params;
     }
 
 }

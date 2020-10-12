@@ -42,7 +42,6 @@ import de.inetsoftware.jwebassembly.JWebAssembly;
 import de.inetsoftware.jwebassembly.WasmException;
 import de.inetsoftware.jwebassembly.javascript.JavaScriptWriter;
 import de.inetsoftware.jwebassembly.jawa.JawaSyntheticFunctionName;
-import de.inetsoftware.jwebassembly.jawa.StringWriter;
 import de.inetsoftware.jwebassembly.module.TypeManager.StructType;
 import de.inetsoftware.jwebassembly.wasm.AnyType;
 import de.inetsoftware.jwebassembly.wasm.FunctionType;
@@ -285,11 +284,9 @@ public class ModuleGenerator {
         } while( functCount < functions.size() );
 
         types.setTypeIndex();
-
        // write only the needed imports to the output
         for( Iterator<FunctionName> iterator = functions.getNeededImports(); iterator.hasNext(); ) {
             FunctionName name = iterator.next();
-
             functions.markAsWritten( name );
             Function<String, Object> importAnannotation = functions.getImportAnannotation( name );
             String importModule = (String)importAnannotation.apply( "module" );
@@ -303,12 +300,16 @@ public class ModuleGenerator {
                 importName = name.methodName;
             }
             AnyType arg = null;
+            AnyType second_arg = null;
+            boolean delayed = false;
             if ( importModule == "jawa" ) { // is jawa function
                 JawaSyntheticFunctionName f = (JawaSyntheticFunctionName) name;
                 arg = f.arg;
-                name.fullName = name.fullName + ((f.arg == null) ? "" : f.arg.toString());
+                second_arg = f.second_arg;
+                delayed = f.delayed;
+                name.fullName = name.fullName + ((f.arg == null) ? "" : f.arg.toString()) + ((f.second_arg == null) ? "" : f.second_arg.toString());
             }
-            writer.prepareImport( name, importModule, importName, arg );
+            writer.prepareImport( name, importModule, importName, delayed, arg, second_arg);
             writeMethodSignature( name, FunctionType.Import, null );
             javaScript.addImport( importModule, importName, importAnannotation );
         }
@@ -421,7 +422,7 @@ public class ModuleGenerator {
                 }
             }
         }
-        javaScript.finish();
+//        javaScript.finish();
     }
 
     /**

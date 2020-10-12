@@ -16,14 +16,11 @@
 */
 package de.inetsoftware.jwebassembly.jawa;
 
-import de.inetsoftware.jwebassembly.javascript.JavaScriptWriter;
 import de.inetsoftware.jwebassembly.module.ArraySyntheticFunctionName;
 import de.inetsoftware.jwebassembly.module.TypeManager;
 import de.inetsoftware.jwebassembly.wasm.AnyType;
 
-import java.sql.Struct;
 import java.util.function.Function;
-import java.util.function.Supplier;
 
 /**
  * Synthetic JavaScript import function.
@@ -34,20 +31,20 @@ import java.util.function.Supplier;
 public class JawaSyntheticFunctionName extends ArraySyntheticFunctionName {
 
     public AnyType arg;
+    public AnyType second_arg;
+    public boolean delayed;
 
     /**
      * Create a synthetic function which based on imported, dynamically generated WASM from JAWA
-     *
-     * @param module
+     *  @param module
      *            the module name
      * @param functionName
      *            the name of the function
+     * @param delayed
      * @param signature
-     *            the types of the signature
      */
-    public JawaSyntheticFunctionName( AnyType arg, String module, String functionName, TypeManager.StructType type, AnyType... signature ) {
+    public JawaSyntheticFunctionName( AnyType arg, String module, String functionName, boolean delayed, TypeManager.StructType type, AnyType... signature ) {
         super( module, functionName, signature );
-
         StringBuilder sigName = new StringBuilder("(");
         for (AnyType t : signature) {
             if (t == null) {
@@ -61,9 +58,17 @@ public class JawaSyntheticFunctionName extends ArraySyntheticFunctionName {
             sigName.append(arg.toString());
             sigName.append(']');
         }
+        if (type != null) {
+            sigName.append('[');
+            sigName.append(type.toString());
+            sigName.append(']');
+        }
         this.signature = sigName.toString();
         this.signatureName = this.fullName + this.signature;
         this.arg = arg;
+        this.delayed = delayed;
+        if (type != null)
+            this.second_arg = type;
     }
 
     /**

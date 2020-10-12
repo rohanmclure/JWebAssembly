@@ -420,7 +420,7 @@ public abstract class WasmCodeBuilder {
         } catch (IOException e) {
             e.printStackTrace();
         }
-        FunctionName functionName = new JawaSyntheticFunctionName(null, "jawa", fname.toString(), null);
+        FunctionName functionName = new JawaSyntheticFunctionName(null, "jawa", fname.toString(), false, null);
         AnyType type = new ValueTypeParser("Ljava/lang/String;", types).next();
 
         instructions.add(new WasmGlobalInstruction(load, functionName, type, javaCodePos, lineNumber));
@@ -848,13 +848,15 @@ public abstract class WasmCodeBuilder {
      * @param lineNumber the line number in the Java source code
      */
     protected void addJawaCallInstruction (JawaOpcodes.JawaFuncOpcode op, @Nonnull String typeName, @Nonnull FunctionName fName, @Nonnull NamedStorageType fieldName, int javaCodePos, int lineNumber ) {
-        // Currently jawa doesn't have <init>
-        if( "<init>".equals( fName.methodName ) && fName.className.contains("java/lang")) {
-            addCallInstruction(fName, javaCodePos, lineNumber);
-            return;
+
+        if (!fName.className.equals("java/lang/String")
+            && !fName.className.contains("Exception")
+            && !fName.className.equals("java/lang/Object")
+        ) { // String is defined in jawa
+            fName = functions.markAsNeeded( fName );
+            functions.markClassAsUsed( fName.className );
         }
 
-        fName = functions.markAsNeeded( fName );
         boolean needThisParameter = functions.needThisParameter( fName );
         WasmJawaCallInstruction jawaInstruction = new WasmJawaCallInstruction( op, typeName, fName, needThisParameter, javaCodePos, lineNumber, types );
         instructions.add( jawaInstruction );
@@ -863,7 +865,6 @@ public abstract class WasmCodeBuilder {
             functions.markAsNeeded( name );
             functions.markAsImport(name, name.getAnnotation());
         }
-        functions.markClassAsUsed( fName.className );
     }
 
     /**
