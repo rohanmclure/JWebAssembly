@@ -658,26 +658,33 @@ class JavaMethodWasmCodeBuilder extends WasmCodeBuilder {
                         addJawaCallInstruction(JawaOpcodes.JawaFuncOpcode.INVOKESTATIC, fName.className, fName, null, codePos, lineNumber);
                         break;
                     case 185: // invokeinterface
-                        idx = byteCode.readUnsignedShort();
-                        ref = (ConstantRef)constantPool.get( idx );
-                        FunctionName funcName = new FunctionName( ref );
-                        switch( op ) {
-                            case 182:
-                                addCallVirtualInstruction( funcName, codePos, lineNumber );
-                                break;
-                            case 183:
-                                addCallInstruction( funcName, codePos, lineNumber );
-                                break;
-                            case 184:
-                                addCallInstruction( funcName, codePos, lineNumber );
-                                break;
-                            case 185:
-                                addCallInterfaceInstruction( funcName, codePos, lineNumber );
-                                byteCode.read(); // count
-                                byteCode.read(); // 0
-                                break;
-                        }
+                        ref = (ConstantRef) constantPool.get( byteCode.readUnsignedShort() );
+                        fName = new FunctionName(ref);
+                        addJawaCallInstruction(JawaOpcodes.JawaFuncOpcode.INVOKEINTERFACE, fName.className, fName, null, codePos, lineNumber);
+                        byteCode.read(); // count;
+                        byteCode.read(); // 0
                         break;
+//                        idx = byteCode.readUnsignedShort();
+//                        ref = (ConstantRef)constantPool.get( idx );
+//                        FunctionName funcName = new FunctionName( ref );
+//                        switch( op ) {
+//                            case 182:
+//                                addCallVirtualInstruction( funcName, codePos, lineNumber );
+//                                break;
+//                            case 183:
+//                                addCallInstruction( funcName, codePos, lineNumber );
+//                                break;
+//                            case 184:
+//                                addCallInstruction( funcName, codePos, lineNumber );
+//                                break;
+//                            case 185:
+//                                System.out.println("CallInterface not yet supported...");
+//                                addCallInterfaceInstruction( funcName, codePos, lineNumber );
+//                                byteCode.read(); // count
+//                                byteCode.read(); // 0
+//                                break;
+//                        }
+//                        break;
                     case 186: // invokedynamic
                         idx = byteCode.readUnsignedShort();
                         ConstantInvokeDynamic dynamic = (ConstantInvokeDynamic)constantPool.get( idx );

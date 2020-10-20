@@ -569,6 +569,8 @@ public class TypeManager {
 
         private List<FunctionName>     vtable;
 
+        private Set<StructType>        interfaceTypes;
+
         private Set<StructType>        instanceOFs;
 
         private Map<StructType,List<FunctionName>> interfaceMethods;
@@ -634,6 +636,12 @@ public class TypeManager {
                 HashSet<String> allNeededFields = new HashSet<>();
                 listStructFields( "java/lang/Object", functions, types, classFileLoader, allNeededFields );
             } else {
+                ClassFile classFile = classFileLoader.get( this.name );
+                if( classFile == null ) {
+                    throw new WasmException( "Missing class: " + this.name, -1 );
+                }
+                if( classFile.getType() == Type.Interface )
+                    typeCode = typeCode == JawaOpcodes.JawaTypeOpcode.DECL_CLASS ? JawaOpcodes.JawaTypeOpcode.DECL_INTERFACE : typeCode;
                 // add all interfaces to the instanceof set
                 listInterfaces( functions, types, classFileLoader );
                 HashSet<String> allNeededFields = new HashSet<>();
@@ -661,17 +669,33 @@ public class TypeManager {
         }
 
         protected void writeStructImportType( ModuleWriter writer, FunctionManager functions, TypeManager types, ClassFileLoader classFileLoader ) throws IOException {
-            JWebAssembly.LOGGER.fine( "import write type: " + name );
+            JWebAssembly.LOGGER.fine("import write type: " + name);
             StringWriter importName = new StringWriter();
             importName.write(getTypeOpcode().opcode);
             importName.writeName(this.getName());
             if (this.getTypeOpcode() == JawaOpcodes.JawaTypeOpcode.DECL_CLASS) {
                 importName.writeJI2(this.jawaAccessFlags);
-                importName.writeJI4(/* interface count */ 0); // todo add interfaces
-                writer.importType("jawa", importName.toString(), this, this.parent, this.parent);
+                importName.writeJI4(interfaceTypes.size());
+                ArrayList<StructType> args = new ArrayList<>();
+                args.add(this.parent);
+                for (StructType t : interfaceTypes) {
+                    args.add(t);
+                }
+                writer.importType("jawa", importName.toString(), this, null, args.toArray(new AnyType[0]));
+                writeStructImportCommand(writer, functions, types, classFileLoader);
+            } else if (this.getTypeOpcode() == JawaOpcodes.JawaTypeOpcode.DECL_INTERFACE) {
+                importName.writeJI4(interfaceTypes.size());
+                ArrayList<StructType> args = new ArrayList<>();
+                for (StructType t : interfaceTypes) {
+                    args.add(t);
+                }
+                writer.importType("jawa", importName.toString(), this, null, args.toArray(new AnyType[0]));
                 writeStructImportCommand(writer, functions, types, classFileLoader);
             } else {
-                writer.importType("jawa", importName.toString(), this, this.parent);
+                ArrayList<StructType> args = new ArrayList<>();
+                if (this.parent != null)
+                    args.add(this.parent);
+                writer.importType("jawa", importName.toString(), this, null, args.toArray(new AnyType[0]));
             }
         }
 
@@ -680,6 +704,46 @@ public class TypeManager {
             ClassFile classFile = classFileLoader.get( this.name );
             if( classFile == null ) {
                 throw new WasmException( "Missing class: " + this.name, -1 );
+            }
+
+            if( classFile.getType() == Type.Interface ) {
+                ArrayList<MethodInfo> interfaceMethods = new ArrayList<>();
+
+                StringWriter importName = new StringWriter();
+                importName.write(JawaOpcodes.JawaTypeOpcode.DEF_INTERFACE.opcode);
+                List<ImportArguments> args = new ArrayList<>();
+                args.add(new ImportArguments.AnyType(this));
+
+                for (MethodInfo method : classFile.getMethods()) {
+                    FunctionName fname = new FunctionName(method.getClassName(), method.getName(), method.getSignature());
+//                    functions.markAsNeeded(fname);
+                    if (!functions.isUsed(fname))
+                        continue;
+                    interfaceMethods.add(method);
+                    System.out.println("NEEDED: " + method.getName());
+                }
+
+                importName.writeJI4(interfaceMethods.size());
+                for (MethodInfo method : interfaceMethods) {
+                    FunctionName fname = new FunctionName(method.getClassName(), method.getName(), method.getSignature());
+                    if (functions.isUsed(fname)) {
+                        importName.writeName(method.getName());
+                        importName.writeJI2(JawaAttributes.JawaMethodAttr.convertTo(method.getAccessFlags()));
+                        JawaSignature sig = new JawaSignature(method.getSignature(), this.typeManager);
+                        String jawaSig = sig.getJawaSig();
+                        importName.writeJI2(jawaSig.length() - 1); // -1 for the return type
+                        importName.writeSig(jawaSig);
+                        for (AnyType t : sig.getJawaTypes()) {
+                            args.add(new ImportArguments.AnyType(t));
+                        }
+                        args.add(new ImportArguments.Function(writer.getFunction(fname)));
+                    }
+                }
+
+                writer.importCommand("jawa",
+                        importName.toString(),
+                        args);
+                return;
             }
 
             ArrayList<FieldInfo> staticFields = new ArrayList<>();
@@ -901,7 +965,7 @@ public class TypeManager {
          */
         private void listInterfaces( FunctionManager functions, TypeManager types, ClassFileLoader classFileLoader ) throws IOException {
             // all implemented interfaces in the hierarchy
-            Set<StructType> interfaceTypes = new LinkedHashSet<>();
+            interfaceTypes = new LinkedHashSet<>();
             // all classes in the hierarchy
             ArrayList<ClassFile> classFiles = new ArrayList<>();
 
@@ -1039,7 +1103,7 @@ public class TypeManager {
 
         @Override
         public boolean useRefType() {
-            return this.parent != null || this.getName().equals("java/lang/Object");
+            return this.parent != null || this.getName().equals("java/lang/Object") || this.getTypeOpcode() == JawaOpcodes.JawaTypeOpcode.DECL_INTERFACE;
         }
 
         /**

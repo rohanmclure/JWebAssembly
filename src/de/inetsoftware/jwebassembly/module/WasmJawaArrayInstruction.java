@@ -102,7 +102,7 @@ class WasmJawaArrayInstruction extends WasmInstruction {
                     functionName = new JawaSyntheticFunctionName(type, moduleName, funcName.toString(), true, null, type, ValueType.i32, null, ((ArrayType) type).getArrayType());
                     return functionName;
                 case AASTORE:
-                    functionName = new JawaSyntheticFunctionName(types.arrayType(type), moduleName, funcName.toString(), true, null,types.arrayType(type), ValueType.i32, type, null);
+                    functionName = new JawaSyntheticFunctionName(type, moduleName, funcName.toString(), true, null,type, ValueType.i32, ((ArrayType) type).getArrayType(), null);
                     return functionName;
                 case NEWARRAY:
                     switch ((ValueType) type) {
