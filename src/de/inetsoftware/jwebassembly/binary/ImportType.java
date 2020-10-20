@@ -70,16 +70,15 @@ class ImportType extends Function {
         }
         stream.writeVaruint32( ExternalKind.TypeImport.ordinal() );
         stream.write(new byte[]{(byte) 3}); // flags
-        if (this.parent == null) {
-            stream.writeVaruint32(0); // constraint count
-        } else {
-            stream.writeVaruint32(1); // constraint count
-            stream.write(0); // constraint type // todo constraint type
+        stream.writeVaruint32(this.args.length); // constraint count
+        for (int i = 0; i < this.args.length; i++) {
+            int finalI = i;
+            stream.write(0); // constraint type
             stream.writeValueType(ValueType.abstractref); // value type is abstract
             stream.writeValueType(new AnyType() {
                 @Override
                 public int getCode() {
-                    return (type instanceof ArrayType) ? 0 : parent.getJawaCode();
+                    return (type instanceof ArrayType) ? 0 : args[finalI].getJawaCode();
                 }
 
                 @Override
