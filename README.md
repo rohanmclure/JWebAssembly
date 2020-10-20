@@ -1,7 +1,7 @@
 # How to build + run JWebAssembly
 
 ## Prerequisites
-To run this repo, firstly you need wizard-engine, layed out in the following directory structure.
+To run this repo, firstly you need wizard-engine, with repos laid out in the following directory structure.
 
 - `...`
   - `JWebAssembly`
