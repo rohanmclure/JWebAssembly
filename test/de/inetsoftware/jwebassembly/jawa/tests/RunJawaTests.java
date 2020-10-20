@@ -16,11 +16,26 @@
  */
 package de.inetsoftware.jwebassembly.jawa.tests;
 
+import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import static de.inetsoftware.jwebassembly.jawa.tests.TestRunner.run;
 import de.inetsoftware.jwebassembly.jawa.tests.unit.*;
 
+import java.io.File;
+
 public class RunJawaTests {
+
+    final static boolean isWindows = System.getProperty("os.name").toLowerCase().contains("win");
+    final static String SEPARATOR = isWindows ? "\\" : "/";
+
+    @BeforeClass
+    public void setup() {
+        File directory = new File("build" + SEPARATOR + "code");
+        if (! directory.exists()){
+            directory.mkdirs();
+        }
+    }
 
     @Test
     public void add01() { run( add01.class ); }
@@ -87,6 +102,9 @@ public class RunJawaTests {
 
     @Test
     public void args09() { run( args09.class ); }
+
+    @Test
+    public void array00() { run( array00.class ); }
 
     @Test
     public void array01() { run( array01.class ); }

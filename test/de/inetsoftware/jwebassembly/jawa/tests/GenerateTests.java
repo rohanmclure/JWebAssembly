@@ -9,10 +9,12 @@ import java.nio.file.Paths;
 
 class GenerateTests {
 
-    static final String JAWA_TEST_ROOT = "test\\de\\inetsoftware\\jwebassembly\\jawa\\tests";
-    static final String TEMPLATE_FILE = JAWA_TEST_ROOT + "\\Empty.java";
-    static final String WRITE_TO = JAWA_TEST_ROOT + "\\RunJawaTests.java";
-    static final String TEST_DIR = JAWA_TEST_ROOT + "\\unit";
+    final static boolean isWindows = System.getProperty("os.name").toLowerCase().contains("win");
+    final static String SEPARATOR = isWindows ? "\\" : "/";
+    static final String JAWA_TEST_ROOT = "test" + SEPARATOR + "de" + SEPARATOR + "inetsoftware" + SEPARATOR + "jwebassembly" + SEPARATOR + "jawa" + SEPARATOR + "tests";
+    static final String TEMPLATE_FILE = JAWA_TEST_ROOT + "" + SEPARATOR + "Empty.java";
+    static final String WRITE_TO = JAWA_TEST_ROOT + "" + SEPARATOR + "RunJawaTests.java";
+    static final String TEST_DIR = JAWA_TEST_ROOT + "" + SEPARATOR + "unit";
     static final String TEST_TEMPLATE = "    @Test\n    public void REPLACE() { run( REPLACE.class ); }\n\n";
 
     public static void main(String[] args) {

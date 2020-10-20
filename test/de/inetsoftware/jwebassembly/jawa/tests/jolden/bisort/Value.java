@@ -177,8 +177,6 @@ class Value {
         putln();
         if (right != null)
             right.inOrder();
-
-        new Random();
     }
 
 

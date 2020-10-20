@@ -15,11 +15,25 @@
  */
 package de.inetsoftware.jwebassembly.jawa.tests;
 
+import org.junit.BeforeClass;
 import org.junit.Test;
 import static de.inetsoftware.jwebassembly.jawa.tests.TestRunner.run;
 import de.inetsoftware.jwebassembly.jawa.tests.unit.*;
 
+import java.io.File;
+
 public class Empty {
+
+    final static boolean isWindows = System.getProperty("os.name").toLowerCase().contains("win");
+    final static String SEPARATOR = isWindows ? "\\" : "/";
+
+    @BeforeClass
+    public void setup() {
+        File directory = new File("build" + SEPARATOR + "code");
+        if (! directory.exists()){
+            directory.mkdirs();
+        }
+    }
 
 /** REPLACE **/
 
