@@ -28,7 +28,7 @@ public class Empty {
     final static String SEPARATOR = isWindows ? "\\" : "/";
 
     @BeforeClass
-    public void setup() {
+    public static void setup() {
         File directory = new File("build" + SEPARATOR + "code");
         if (! directory.exists()){
             directory.mkdirs();
